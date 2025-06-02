@@ -21,10 +21,10 @@ set(CMAKE_CXX_STANDARD 11)
 # Set CUDA flags
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -O3 -arch=sm_86 --use_fast_math)  # Adjust architecture as needed
 
-set(FN_IK_GO2_SOURCE codegen/fn_IK_go2.cu)
+set(FN_QP_SOLVER_SOURCE codegen/fn_qp_solver.cu)
 
 # Include directories for your header files
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(fn_IK_go2 SHARED ${FN_IK_GO2_SOURCE})
-target_link_libraries(fn_IK_go2)
+add_library(fn_qp_solver SHARED ${FN_QP_SOLVER_SOURCE})
+target_link_libraries(fn_qp_solver)

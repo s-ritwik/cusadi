@@ -12,6 +12,8 @@ def cubic_bezier_interpolation(z_start, z_end, t):
 def inverse_kinematics(foot_pos, foot_ids, data, model, tol=1e-9, max_iter=1000):
     for ind, foot_id in enumerate(foot_ids):
         target_pos = foot_pos[ind]
+
+
         error = None
         """Simple iterative IK solver using gradient descent."""
         for i in range(max_iter):  # Maximum iterations
@@ -57,7 +59,7 @@ def generate_reference(v_x, v_y, w_z, foot_ids, default_foot_pos, data, model, s
             [np.sin(p_com[-1, 2]), np.cos(p_com[-1, 2]), 0],
             [0, 0, 1]
         ]) @ default_foot_pos.T).T
-
+    # print(p_foot_0)
     # Next, design trajectory for each foot
     for i in range(N):
         t = ts[i]
@@ -79,8 +81,13 @@ def generate_reference(v_x, v_y, w_z, foot_ids, default_foot_pos, data, model, s
         foot_pos[:, -1] += z
 
         foot_ref[i, :, :] = foot_pos
+        # print("________________")
+        # print(foot_pos)
+        # print("________________")
+        # print(foot_pos)
         q_ref[i, :] = inverse_kinematics(foot_pos, foot_ids, data, model)
-
+        # print("________________")
+        # print(q_ref)
     return ts, q_ref, foot_ref
 
 
@@ -126,7 +133,7 @@ if __name__ == "__main__":
     v_xs = np.linspace(-1.0, 1.5, 11)
     v_ys = np.linspace(-0.75, 0.75, 7)
     w_zs = np.linspace(-0.5, 0.5, 5)
-
+    
     ts, q_refs, foot_refs = generate_gait_libray(v_xs, v_ys, w_zs)
 
     # q_refs is currently mid-stance to mid-stance. We want stance -> swing
