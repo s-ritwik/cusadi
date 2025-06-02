@@ -3,6 +3,7 @@
 <br />
 <div align="center">
   <h1 align="center">CusADi</h1>
+  <h3> Fork to do RL stuff using Cusadi for MPC solving </h3>
   <h3 align="center">
     Parallelizing symbolic expressions from CasADi on the GPU
     <br />
