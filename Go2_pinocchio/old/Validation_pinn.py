@@ -130,7 +130,7 @@ def pinocchio_forward_kinematics(q, foot_frame_ids: list, model: pin.Model, data
 if __name__ == "__main__":
     # 3.1 Paths to models
     MJ_XML_PATH   = "go_2/go2_fixed.xml"
-    URDF_PATH     = "Go2_pinocchio/go2_corrected_fixed3.urdf"
+    URDF_PATH     = "Go2_pinocchio/go2_original.urdf"
 
     # 3.2 Load MuJoCo model and data
     mj_model = mujoco.MjModel.from_xml_path(MJ_XML_PATH)
@@ -156,8 +156,8 @@ if __name__ == "__main__":
         [-0.27051568, -0.11137226, 0.13496522],   # RR
     ])
     target_foot_positions= np.array([
-    [ 0.180,  0.110, 0.126],   # FL
-    [ 0.180, -0.110, 0.126],   # FR
+    [ 0.180,  0.110, 0.226],   # FL
+    [ 0.180, -0.110, 0.226],   # FR
     [-0.271,  0.111, 0.135],   # RL
     [-0.271, -0.111, 0.135],   # RR
     ]) 

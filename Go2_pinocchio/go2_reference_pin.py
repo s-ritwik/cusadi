@@ -6,7 +6,7 @@ from scipy.linalg import pinv
 # ----------------------------------------------------------------------
 # Pinocchio IK Model & constants (added for Pinocchio-based IK)
 # ----------------------------------------------------------------------
-GO2_URDF = "Go2_pinocchio/go2_corrected_fixed3.urdf"  # Path to the converted URDF for Go2
+GO2_URDF = "Go2_pinocchio/go2_original.urdf"  # Path to the converted URDF for Go2
 FOOT_FRAMES = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
 DAMPING_PIN = 1e-4          # Damped least-squares regularizer for Pinocchio IK
 IK_ITERS_PIN = 100         # Max iterations per foot for Pinocchio IK
@@ -208,7 +208,25 @@ def generate_gait_libray(v_xs, v_ys, w_zs, swing_height=0.08, T=0.4, N=100):
                 )
                 q_refs[ix, iy, iz, :] = qref
                 foot_refs[ix, iy, iz, :] = foot_ref
+                # ### ADD THIS CONVERGENCE TEST PER TRAJECTORY ###
+                # for t_idx in range(N):
+                #     q_t = qref[t_idx, :]  # (12,)
+                #     pin.forwardKinematics(model, data, q_t)
+                #     pin.updateFramePlacements(model, data)
 
+                #     for foot_idx, fid in enumerate(foot_ids):
+                #         p_fk = data.oMf[fid].translation  # (3,)
+                #         p_target = foot_ref[t_idx, foot_idx, :]  # (3,)
+                #         err = p_target - p_fk
+                #         norm_err = np.linalg.norm(err)
+
+                #         if norm_err >= 1e-6:
+                #             print(f"[WARN] (vx={v_x:.2f}, vy={v_y:.2f}, wz={w_z:.2f}) "
+                #                   f"Foot {FOOT_FRAMES[foot_idx]} at t[{t_idx}] "
+                #                   f"did not converge: ‖err‖={norm_err:.3e} m")
+                #         else:
+                #             print("NICE")
+                # ### END TEST ###
     return ts, q_refs, foot_refs
 
 

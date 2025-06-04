@@ -5,7 +5,7 @@ import time
 
 
 v_x = 0
-v_y = .2
+v_y = .0
 w_z = 0.
 
 
@@ -16,12 +16,12 @@ def yaw2quat(yaw):
 
 
 if __name__ == "__main__":
-    v_xs = np.load("references1/go2_vxs.npy")
-    v_ys = np.load("references1/go2_vys.npy")
-    w_zs = np.load("references1/go2_wzs.npy")
-    ts = np.load("references1/go2_reference_ts.npy")
-    q_refs = np.load("references1/go2_reference_qs.npy")
-    foot_refs = np.load("references1/go2_reference_foot_refs.npy")
+    v_xs = np.load("references/go2_vxs.npy")
+    v_ys = np.load("references/go2_vys.npy")
+    w_zs = np.load("references/go2_wzs.npy")
+    ts = np.load("references/go2_reference_ts.npy")
+    q_refs = np.load("references/go2_reference_qs.npy")
+    foot_refs = np.load("references/go2_reference_foot_refs.npy")
 
     # Load the XML model
     model = mujoco.MjModel.from_xml_path("go_2/go2.xml")

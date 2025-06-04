@@ -1,89 +1,243 @@
-# IK_go2_casadi_gen.py
+# gen_reference_casadi_debug.py
+
 import casadi as ca
+import pinocchio as pin
+from pinocchio import casadi as cpin
+import numpy as np
 
-# 0) Robot geometry from your XML / URDF (all in meters)
-#    hip_offset is lateral distance from body center to each hip
-hip_offset = 0.0465  
-L_thigh = 0.213    # thigh
-L_shin  = 0.213    # shin
+# ----------------------------
+# 1. Numeric Pinocchio Setup
+# ----------------------------
 
-# 1) Symbolic variables
-#    q = [q0…q11] is all 12 leg joints:
-#      [FL_abd, FL_hip, FL_knee,
-#       FR_abd, FR_hip, FR_knee,
-#       RL_abd, RL_hip, RL_knee,
-#       RR_abd, RR_hip, RR_knee]
-q = ca.SX.sym('q', 12, 1)
+URDF_PATH = "Go2_pinocchio/go2_original.urdf"
 
-#    p_target is 4*(x,y,z) stacked
-p_target = ca.SX.sym('p', 12, 1)
+# Build the numeric Pinocchio model/data to extract q_init and default foot poses
+model_pin = pin.buildModelFromUrdf(URDF_PATH)
+data_pin = model_pin.createData()
 
-# 2) Helper: single-leg FK in CasADi
-def leg_fk(x_off, y_off, q_abd, q_hip, q_knee):
-    """
-    Returns foot pos [x,y,z] for one leg.
-    x_off, y_off = hip location in body frame.
-    q_abd: ab/adduction about body‐Y
-    q_hip: hip pitch about body‐X
-    q_knee: knee pitch about leg frame Y
-    """
-    # Rotate hip ab/adduction (about Y) at the hip mount:
-    R_abd = ca.vertcat(
-      ca.horzcat(ca.cos(q_abd), 0, -ca.sin(q_abd)),
-      ca.horzcat(0,            1, 0),
-      ca.horzcat(ca.sin(q_abd), 0,  ca.cos(q_abd))
+# “Neutral” posture (in degrees) exactly from go2_reference_pin.py
+q_init_numpy = np.deg2rad(np.array([
+    -5.7,  45.8, -86.0,
+    +5.7,  45.8, -86.0,
+    -5.7,  57.3, -86.0,
+    +5.7,  57.3, -86.0
+]))
+pin.forwardKinematics(model_pin, data_pin, q_init_numpy)
+pin.updateFramePlacements(model_pin, data_pin)
+
+# Foot frames
+frame_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
+frame_ids   = [model_pin.getFrameId(name) for name in frame_names]
+
+# Numeric default foot positions (4×3)
+default_foot_pos_num = np.vstack([
+    data_pin.oMf[fid].translation.copy() for fid in frame_ids
+])
+
+# ----------------------------
+# 2. CasADi Symbolic Setup
+# ----------------------------
+
+# Cast constants to SX
+q_init    = ca.SX(q_init_numpy)                 # (12×1)
+p_foot0   = ca.SX(default_foot_pos_num)         # (4×3)
+
+# Build CasADi-enabled Pinocchio model/data
+cmodel = cpin.Model(model_pin)
+cdata  = cmodel.createData()
+
+nq = model_pin.nq  # should be 12
+
+# Discretization
+N = 100  # number of time steps
+
+# IK parameters from original Python code
+damping   = 1e-4
+ik_iters  = 100
+small_wz  = 1e-2    # threshold for “near zero” w_z
+
+# ----------------------------
+# 3. Define CasADi Inputs
+# ----------------------------
+
+v_x     = ca.SX.sym("v_x")      # forward velocity
+v_y     = ca.SX.sym("v_y")      # lateral velocity
+w_z     = ca.SX.sym("w_z")      # yaw rate
+swing_h = ca.SX.sym("swing_h")  # swing height
+T       = ca.SX.sym("T")        # total duration
+
+# ----------------------------
+# 4. Precompute ts (time stamps)
+# ----------------------------
+
+ts = ca.SX(N, 1)
+for i in range(N):
+    ts[i] = (T * i) / (N - 1)
+
+# ----------------------------
+# 5. Precompute p_foot1 Symbolically
+# ----------------------------
+
+theta_end = w_z * T
+
+x_end = ca.if_else(
+    ca.fabs(w_z) < small_wz,
+    v_x * T,
+    (v_x * ca.sin(theta_end) + v_y * (ca.cos(theta_end) - 1)) / w_z
+)
+y_end = ca.if_else(
+    ca.fabs(w_z) < small_wz,
+    v_y * T,
+    (v_x * (1 - ca.cos(theta_end)) + v_y * ca.sin(theta_end)) / w_z
+)
+
+c_end = ca.cos(theta_end)
+s_end = ca.sin(theta_end)
+R_end = ca.SX(3, 3)
+R_end[0, 0] =  c_end;  R_end[0, 1] = -s_end;  R_end[0, 2] = 0
+R_end[1, 0] =  s_end;  R_end[1, 1] =  c_end;  R_end[1, 2] = 0
+R_end[2, 0] =     0  ;  R_end[2, 1] =     0  ;  R_end[2, 2] = 1
+
+# Rotate default foot positions (4×3)
+p_rotated = (R_end @ p_foot0.T).T  # (4×3)
+
+# Build matrix of [x_end, y_end, 0] repeated 4×
+p_end_row   = ca.vertcat(x_end, y_end, 0).T  # (1×3)
+p_end_mat   = ca.repmat(p_end_row, 4, 1)     # (4×3)
+
+p_foot1 = p_end_mat + p_rotated  # (4×3)
+
+# ----------------------------
+# 6. Allocate Outputs
+# ----------------------------
+
+q_ref         = ca.SX.zeros(nq, N)    # (12×100)
+foot_ref_flat = ca.SX.zeros(12, N)    # flatten(4×3) → (12×1) per column
+
+# ----------------------------
+# 7. Main Loop Over Time Steps (with debug prints)
+# ----------------------------
+
+q_prev = q_init  # initial guess
+
+print("=== Starting symbolic graph construction (this may take a while) ===")
+for i in range(N):
+    print(f"[DEBUG] Time step i = {i+1} / {N}")
+
+    # Current CoM pose
+    t_i     = ts[i]
+    theta_i = w_z * t_i
+
+    x_i = ca.if_else(
+        ca.fabs(w_z) < small_wz,
+        v_x * t_i,
+        (v_x * ca.sin(theta_i) + v_y * (ca.cos(theta_i) - 1)) / w_z
     )
-    # rotate hip pitch (about X)
-    R_hip = ca.vertcat(
-      ca.horzcat(1, 0,             0),
-      ca.horzcat(0, ca.cos(q_hip), -ca.sin(q_hip)),
-      ca.horzcat(0, ca.sin(q_hip),  ca.cos(q_hip))
-    )
-    # knee pitch about Y in thigh frame:
-    R_knee = ca.vertcat(
-      ca.horzcat(ca.cos(q_knee), 0, -ca.sin(q_knee)),
-      ca.horzcat(0,             1, 0),
-      ca.horzcat(ca.sin(q_knee), 0,  ca.cos(q_knee))
+    y_i = ca.if_else(
+        ca.fabs(w_z) < small_wz,
+        v_y * t_i,
+        (v_x * (1 - ca.cos(theta_i)) + v_y * ca.sin(theta_i)) / w_z
     )
 
-    # hip to thigh translation along body X by 0 (no offset in X), then along Z:
-    p_hip = ca.vertcat(x_off, y_off, 0)
-    # thigh end relative to hip: along body-frame X by L_thigh in hip-rotated frame
-    p_thigh = R_abd @ R_hip @ ca.vertcat(L_thigh, 0, 0)
-    # shin end relative to thigh end:
-    p_shin = R_abd @ R_hip @ R_knee @ ca.vertcat(L_shin, 0, 0)
+    # Phase & clamp
+    phase_raw     = (t_i / T - 0.25) * 2
+    phase_clamped = ca.fmin(ca.fmax(phase_raw, 0), 1)
 
-    # foot position:
-    return p_hip + p_thigh + p_shin  # 3×1
+    # Cubic Bézier for vertical z
+    u1   = 2 * phase_clamped
+    bez1 = u1**3 + 3 * (u1**2 * (1 - u1))
+    z1   = bez1 * swing_h
 
-# 3) Build the 4 feet → 12×1 vector
-feet = []
-# offsets: FL (+x,+y), FR(+x, -y), RL(-x,+y), RR(-x,-y)
-offs = [( 0.1934,  hip_offset),   # approx from your XML
-        ( 0.1934, -hip_offset),
-        (-0.1934,  hip_offset),
-        (-0.1934, -hip_offset)]
-for i,(xo,yo) in enumerate(offs):
-    q0 = q[3*i + 0]  # ab/adduction
-    q1 = q[3*i + 1]  # hip pitch
-    q2 = q[3*i + 2]  # knee pitch
-    feet.append(leg_fk(xo, yo, q0, q1, q2))
-feet_pos = ca.vertcat(*feet)         # 12×1
+    u2   = 2 * phase_clamped - 1
+    bez2 = u2**3 + 3 * (u2**2 * (1 - u2))
+    z2   = swing_h - (bez2 * swing_h)
+    z    = ca.if_else(phase_clamped <= 0.5, z1, z2)
 
-# 4) residual = feet_pos - p_target
-resid = feet_pos - p_target          # 12×1
+    # Horizontal Kinematics Bézier
+    bez_sp      = phase_clamped**3 + 3 * (phase_clamped**2 * (1 - phase_clamped))
+    foot_global = p_foot0 + (p_foot1 - p_foot0) * bez_sp  # (4×3)
 
-# 5) residual+Jacobian
-F = ca.Function('F', [q, p_target],
-                [resid, ca.jacobian(resid, q)],
-                ['q','p'], ['r','J'])
+    # Rotate into body frame
+    c_i    = ca.cos(theta_i);  s_i = ca.sin(theta_i)
+    R_body = ca.SX(3, 3)
+    R_body[0, 0] =  c_i;  R_body[0, 1] =  s_i;  R_body[0, 2] = 0
+    R_body[1, 0] = -s_i;  R_body[1, 1] =  c_i;  R_body[1, 2] = 0
+    R_body[2, 0] =   0 ;  R_body[2, 1] =   0 ;  R_body[2, 2] = 1
 
-# 6) Newton rootfinder
-ik = ca.rootfinder('fn_IK_go2', 'newton', F)
+    com_row     = ca.vertcat(x_i, y_i, 0).T   # (1×3)
+    com_mat     = ca.repmat(com_row, 4, 1)    # (4×3)
+    diff_global = foot_global - com_mat       # (4×3)
+    body_pos    = (R_body @ diff_global.T).T  # (4×3)
+    # Add swing height z to Z-column
+    body_pos = ca.horzcat(
+        body_pos[:, 0:1],
+        body_pos[:, 1:2],
+        body_pos[:, 2:3] + z
+    )  # still (4×3)
 
-# 7) wrap and save
-q_sol = ik(p_target)
-fn = ca.Function('fn_IK_go2', [p_target], [q_sol],
-                 ['foot_pos'], ['q'])
-fn.save('fn_IK_go2.casadi')
-print("Saved fn_IK_go2.casadi")
+    # --- Inverse Kinematics for each foot (with debug prints) ---
+    q = q_prev  # initial guess for this time step
+    for k in range(4):
+        print(f"    [DEBUG]   Foot k = {k+1} / 4 at time step {i+1}")
+        fk = ca.vertcat(body_pos[k, 0], body_pos[k, 1], body_pos[k, 2])  # (3×1)
+
+        for it in range(ik_iters):
+            # Print only every 20 iterations
+            if it % 20 == 0:
+                print(f"        [DEBUG]     IK iter = {it+1} / {ik_iters} for foot {k+1}")
+
+            # 1) Forward kinematics
+            cpin.framesForwardKinematics(cmodel, cdata, q)
+
+            # 2) Current foot pos
+            p_cur = cdata.oMf[frame_ids[k]].translation
+
+            # 3) Position error
+            err = fk - p_cur
+
+            # 4) Jacobian (6×nq) → take top 3 rows
+            J6    = cpin.computeFrameJacobian(
+                        cmodel, cdata, q,
+                        frame_ids[k],
+                        cpin.ReferenceFrame.LOCAL_WORLD_ALIGNED
+                    )
+            J_pos = J6[0:3, :]  # (3×12)
+
+            # 5) Damped least-squares update
+            A    = J_pos @ J_pos.T + damping * ca.SX_eye(3)  # (3×3)
+            invA = ca.solve(A, ca.SX_eye(3))                # (3×3)
+            J_dls = J_pos.T @ invA                           # (12×3)
+
+            # 6) Update q
+            q = q + J_dls @ err
+
+        # End of IK iterations for foot k
+
+    # End of 4-foot loop → q holds joint angles (12×1) for this time step
+
+    # Store q into q_ref[:, i]
+    for j in range(nq):
+        q_ref[j, i] = q[j]
+
+    # Flatten body_pos (4×3) → (12×1) and store in foot_ref_flat[:, i]
+    flat = ca.reshape(body_pos.T, 12, 1)
+    for j in range(12):
+        foot_ref_flat[j, i] = flat[j]
+
+    q_prev = q  # update initial guess for next time step
+
+# End of time loop
+print("=== Finished building symbolic graph ===")
+
+# ----------------------------
+# 8. Build & Save CasADi Function
+# ----------------------------
+generate_reference = ca.Function(
+    "generate_reference",
+    [v_x, v_y, w_z, swing_h, T],
+    [ts, q_ref, foot_ref_flat]
+)
+
+print("=== Saving .casadi file to generate_reference.casadi ===")
+generate_reference.save("generate_reference.casadi")
+print("=== Done. ===")
