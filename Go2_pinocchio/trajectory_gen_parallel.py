@@ -229,7 +229,7 @@ def generate_gait_library_cusadi(
                 foot_refs[ix, iy, iz, :, :, :] = foot_ref_np  # shape (N,4,3)
     # Pick a foot and time index:
     foot_idx = 0
-    t_idx    = 42
+    t_idx    = 40
 
     # Compare foot_ref_np[t_idx, foot_idx, :]  vs FK(q_ref_np[t_idx, :])
     # using Pinocchio forwardKinematics + updateFramePlacements.

@@ -8,7 +8,7 @@ from pinocchio import casadi as cpin
 # -----------------------------------
 
 # Path to your URDF
-URDF_PATH = "Go2_pinocchio/go2_original.urdf"
+URDF_PATH = "/home/rycker/src/cusadi/Go2_pinocchio/go2_original.urdf"
 
 # Build standard Pinocchio model to extract joint dims, frame IDs, etc.
 model_pin = pin.buildModelFromUrdf(URDF_PATH)
