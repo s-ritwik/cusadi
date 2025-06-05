@@ -4,9 +4,9 @@ import numpy as np
 import time
 
 
-v_x = 0
-v_y = .0
-w_z = 0.
+v_x = -1
+v_y = -.75
+w_z = -.5
 
 
 def yaw2quat(yaw):
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     data = mujoco.MjData(model)
 
     # 1. Load keyframe and set the robot state
-    keyframe_id = 0  # Assuming the keyframe ID you want to use is 0
+    keyframe_id = 0  # Assuming the keyframe ID you want tnpo use is 0
     mujoco.mj_resetDataKeyframe(model, data, keyframe_id)
     mujoco.mj_forward(model, data)  # Perform forward kinematics
     print("Loaded keyframe:", keyframe_id)
@@ -93,4 +93,3 @@ if __name__ == "__main__":
             viewer.sync()
 
             time.sleep(max(0, dt - (time.time() - t0)))
-b  kqwer

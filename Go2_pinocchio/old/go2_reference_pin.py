@@ -1,4 +1,4 @@
-import mujoco
+# import mujoco
 import numpy as np
 import pinocchio as pin
 from scipy.linalg import pinv

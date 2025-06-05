@@ -168,6 +168,17 @@ def gen_single_trajectory_cusadi(
     # Retrieve GPU outputs:
     q_out_gpu     = fn_cusadi_step.outputs_sparse[0]  # (N,12)
     foot_flat_gpu = fn_cusadi_step.outputs_sparse[1]  # (N,12)
+    flags_gpu     = fn_cusadi_step.outputs_sparse[2]   # (N,4)  <-- NEW
+
+    # host copies ---------------------------------------------------------
+    q_ref_np     = q_out_gpu.cpu().numpy()
+    foot_ref_np  = foot_flat_gpu.cpu().numpy().reshape(N,4,3)
+    flags_np     = flags_gpu.cpu().numpy()
+
+    # warn if any step failed --------------------------------------------
+    bad = np.argwhere(flags_np < 0.5)
+    for t_idx, f_idx in bad:
+        print(f"[WARN] IK-fail  t={t_idx:3d}  foot={FOOT_FRAMES[f_idx]}")
 
     # Move back to CPU NumPy
     q_ref_np       = q_out_gpu.cpu().numpy()            # (N,12)
