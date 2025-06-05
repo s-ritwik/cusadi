@@ -1,0 +1,3 @@
+/home/rycker/src/cusadi/build/CMakeFiles/one_step_ref.dir
+/home/rycker/src/cusadi/build/CMakeFiles/edit_cache.dir
+/home/rycker/src/cusadi/build/CMakeFiles/rebuild_cache.dir
