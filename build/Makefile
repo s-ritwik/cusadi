@@ -117,41 +117,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named one_step_ref
+# Target rules for targets named reference_step
 
 # Build rule for target.
-one_step_ref: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 one_step_ref
-.PHONY : one_step_ref
+reference_step: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 reference_step
+.PHONY : reference_step
 
 # fast build rule for target.
-one_step_ref/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/one_step_ref.dir/build.make CMakeFiles/one_step_ref.dir/build
-.PHONY : one_step_ref/fast
+reference_step/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/build
+.PHONY : reference_step/fast
 
-codegen/one_step_ref.o: codegen/one_step_ref.cu.o
-.PHONY : codegen/one_step_ref.o
+codegen/reference_step.o: codegen/reference_step.cu.o
+.PHONY : codegen/reference_step.o
 
 # target to build an object file
-codegen/one_step_ref.cu.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/one_step_ref.dir/build.make CMakeFiles/one_step_ref.dir/codegen/one_step_ref.cu.o
-.PHONY : codegen/one_step_ref.cu.o
+codegen/reference_step.cu.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/codegen/reference_step.cu.o
+.PHONY : codegen/reference_step.cu.o
 
-codegen/one_step_ref.i: codegen/one_step_ref.cu.i
-.PHONY : codegen/one_step_ref.i
+codegen/reference_step.i: codegen/reference_step.cu.i
+.PHONY : codegen/reference_step.i
 
 # target to preprocess a source file
-codegen/one_step_ref.cu.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/one_step_ref.dir/build.make CMakeFiles/one_step_ref.dir/codegen/one_step_ref.cu.i
-.PHONY : codegen/one_step_ref.cu.i
+codegen/reference_step.cu.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/codegen/reference_step.cu.i
+.PHONY : codegen/reference_step.cu.i
 
-codegen/one_step_ref.s: codegen/one_step_ref.cu.s
-.PHONY : codegen/one_step_ref.s
+codegen/reference_step.s: codegen/reference_step.cu.s
+.PHONY : codegen/reference_step.s
 
 # target to generate assembly for a file
-codegen/one_step_ref.cu.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/one_step_ref.dir/build.make CMakeFiles/one_step_ref.dir/codegen/one_step_ref.cu.s
-.PHONY : codegen/one_step_ref.cu.s
+codegen/reference_step.cu.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/codegen/reference_step.cu.s
+.PHONY : codegen/reference_step.cu.s
 
 # Help Target
 help:
@@ -161,10 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... one_step_ref"
-	@echo "... codegen/one_step_ref.o"
-	@echo "... codegen/one_step_ref.i"
-	@echo "... codegen/one_step_ref.s"
+	@echo "... reference_step"
+	@echo "... codegen/reference_step.o"
+	@echo "... codegen/reference_step.i"
+	@echo "... codegen/reference_step.s"
 .PHONY : help
 
 

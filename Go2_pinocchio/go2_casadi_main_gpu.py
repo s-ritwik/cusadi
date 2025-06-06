@@ -1,11 +1,18 @@
 # import mujoco
 import numpy as np
 import pinocchio as pin
+import torch
+import time
 from scipy.linalg import pinv
 import casadi as ca
 print(ca.__version__)
 reference_step = ca.Function.load("/home/rycker/src/cusadi/reference_step.casadi")
-import time
+from src import CusadiFunction   # assumes you have the same “src/CusadiFunction” as in the pendulum example
+
+
+N = 100  # or whatever you used in generate_reference
+BATCH_SIZE = N
+
 # ----------------------------------------------------------------------
 # Pinocchio IK Model & constants (unchanged)
 # ----------------------------------------------------------------------
@@ -32,57 +39,6 @@ frame_ids = [model_pin.getFrameId(name) for name in FOOT_FRAMES]
 
 q_init_dm      = ca.DM(q_init.reshape(12, 1))     # neutral pose passed every call
 
-
-# def inverse_kinematics_pinocchio(
-#     targets_xyz: np.ndarray,
-#     foot_frame_ids,
-#     model,
-#     data,
-#     q_guess=None,
-#     tol=IK_TOL_PIN,
-#     max_iter=IK_ITERS_PIN,
-#     damping=DAMPING_PIN,
-# ):
-#     """
-#     Multi‐foot IK using Pinocchio, solving feet one‐by‐one in sequence.
-#     ‘targets_xyz’ has shape (4,3) as a NumPy array. Returns a NumPy vector of length 12.
-#     """
-#     if q_guess is None:
-#         q = q_init.copy()
-#     else:
-#         q = q_guess.copy()
-
-#     for k, fid in enumerate(foot_frame_ids):
-#         tgt = targets_xyz[k]
-#         for _ in range(max_iter):
-#             pin.forwardKinematics(model, data, q)
-#             pin.updateFramePlacements(model, data)
-
-#             p_cur = data.oMf[fid].translation
-#             err = tgt - p_cur
-#             if ca.norm_2(err) < tol:
-#                 break
-
-#             J6 = pin.computeFrameJacobian(
-#                 model, data, q, fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED
-#             )
-#             # print("J6 computed")
-#             J_pos = J6[:3, :]
-#             # J_dls = J_pos.T @ np.linalg.inv(J_pos @ J_pos.T + damping * np.eye(3))
-#             # J_dls = J_pos.T @ ca.inv(J_pos @ J_pos.T + damping * ca.MX.eye(3))
-#             J_dls = (ca.DM(J_pos).T @ ca.inv(ca.DM(J_pos) @ ca.DM(J_pos).T
-#                                  + damping * ca.DM.eye(3))).full()
-#             # print(type(q))
-#             q += J_dls @ err
-#             # print(type(q))
-
-#         if ca.norm_2(err) >= tol:
-#             print(f"[WARN] Foot {FOOT_FRAMES[k]} did not converge (‖err‖ = {ca.norm_2(err):.3e} m)")
-
-#     return q
-
-# ----------------------------------------------------------------------
-# “→ replaced with CasADi” Cubic Bézier interpolation for swing foot height
 # ----------------------------------------------------------------------
 def cubic_bezier_interpolation(z_start, z_end, t):
     """
@@ -94,26 +50,6 @@ def cubic_bezier_interpolation(z_start, z_end, t):
     bezier_basis = t_clamped**3 + 3*(t_clamped**2)*(1 - t_clamped)
     return z_start + z_diff * bezier_basis
 
-# ----------------------------------------------------------------------
-# Replacement inverse_kinematics: accepts CasADi DM but converts to NumPy
-# ----------------------------------------------------------------------
-# def inverse_kinematics(foot_pos_casadi: ca.DM):
-#     """
-#     foot_pos_casadi: a CasADi DM of shape (4×3), encoding world‐frame foot positions per row.
-#     Convert to NumPy, call Pinocchio, return a length‐12 NumPy q.
-#     """
-#     foot_pos_np = foot_pos_casadi.toarray().reshape((4,3))
-#     q_sol = inverse_kinematics_pinocchio(
-#         targets_xyz=foot_pos_np,
-#         foot_frame_ids=frame_ids,
-#         model=model_pin,
-#         data=data_pin,
-#         q_guess=q_init,
-#         tol=IK_TOL_PIN,
-#         max_iter=IK_ITERS_PIN,
-#         damping=DAMPING_PIN
-#     )
-#     return q_sol  # NumPy array of length 12
 
 # ----------------------------------------------------------------------
 # “→ replaced with CasADi” Generate reference trajectory
@@ -126,8 +62,6 @@ def generate_reference(
     T,
     N
 ):
-    start=time.time()
-
     # ) Rotation helper (CasADi DM → 3×3)
     def rot_z_dm(angle_dm):
         c = ca.cos(angle_dm)
@@ -220,40 +154,59 @@ def generate_reference(
 
     
 
-    
+
     # 9) Loop over each time index i to fill q_ref_cas and foot_ref_flat_cas
-    for i in range(N):
-        # Take precomputed scalars/vectors at index i:
-        ph_i     = phase[i]          # DM scalar
-        x_i_dm   = x_array[i]        # DM scalar
-        y_i_dm   = y_array[i]        # DM scalar
-        theta_i  = theta_array[i]    # DM scalar
-        z_i_dm   = z_array[i]        # DM scalar
-        foot_w_i = foot_w_stack[:, i]# DM (12,)
+    # torch.cuda.synchronize()
+    t0 = time.time()                         # optional timing
 
-        # Single call into the compiled function:
-        q_i_cas, foot_flat_i = reference_step(
-            ph_i,            # DM scalar
-            foot_w_i,        # DM (12×1) column
-            x_i_dm,          # DM scalar
-            y_i_dm,          # DM scalar
-            theta_i,         # DM scalar
-            z_i_dm,          # DM scalar
-            q_init_dm        # DM (12×1)
-        )
+    BATCH_SIZE = N
+    fn_cusadi_ref = CusadiFunction(reference_step, BATCH_SIZE)         # wrap the .casadi kernel
+    # --- DM  → NumPy -------------------------------------------------------------
+    phase_np   = phase.toarray().squeeze()          # (N,)
+    x_np       = x_array.toarray().squeeze()
+    y_np       = y_array.toarray().squeeze()
+    theta_np   = theta_array.toarray().squeeze()
+    z_np       = z_array.toarray().squeeze()
+    foot_np    = foot_w_stack.toarray().T.copy()           # (N,12)  ← transpose once here
 
-        # Store results:
-        q_ref_cas[i, :]         = ca.reshape(q_i_cas, 1, 12)
-        foot_ref_flat_cas[i, :] = ca.reshape(foot_flat_i, 1, 12)
+    # --- NumPy → CUDA tensors ----------------------------------------------------
+    ph_torch     = torch.from_numpy(phase_np ).to('cuda', torch.double).unsqueeze(1)   # (N,1)
+    x_torch      = torch.from_numpy(x_np     ).to('cuda', torch.double).unsqueeze(1)
+    y_torch      = torch.from_numpy(y_np     ).to('cuda', torch.double).unsqueeze(1)
+    theta_torch  = torch.from_numpy(theta_np ).to('cuda', torch.double).unsqueeze(1)
+    z_torch      = torch.from_numpy(z_np     ).to('cuda', torch.double).unsqueeze(1)
+    foot_torch   = torch.from_numpy(foot_np  ).to('cuda', torch.double)     
+    q_init_np    = np.tile(q_init.reshape(1,12), (N,1))                                                      # (N,12)
+    q_init_torch = torch.from_numpy(q_init_np).to('cuda', torch.double)
+
+    # --- run the kernel ---------------------------------------------------------
+    fn_cusadi_ref.evaluate([
+        ph_torch,           # (N,1)
+        foot_torch,         # (N,12)
+        x_torch,            # (N,1)
+        y_torch,            # (N,1)
+        theta_torch,        # (N,1)
+        z_torch,            # (N,1)
+        q_init_torch        # (N,12)
+    ])
+
+    q_batch_torch      = fn_cusadi_ref.outputs_sparse[0]        # (N,12)
+    foot_batch_torch   = fn_cusadi_ref.outputs_sparse[1]        # (N,12)
+
+    # torch.cuda.synchronize()
+    print(f"GPU batch time: {(time.time()-t0)*1e3:.2f} ms")
+
+    # --- copy back to CPU NumPy --------------------------------------------------
+    q_ref_np          = q_batch_torch.cpu().numpy()             # (N,12)
+    foot_ref_np_flat  = foot_batch_torch.cpu().numpy()          # (N,12)
+    foot_ref_np       = foot_ref_np_flat.reshape(N, 4, 3)       # (N,4,3)
 
     # 10) Convert CasADi → NumPy for returns:
-    ts_np = np.linspace(0, T, N)  # or ts.toarray().flatten()
-    q_ref_np = q_ref_cas.toarray()       # shape (N,12)
-    foot_ref_np = foot_ref_flat_cas.toarray().reshape((N,4,3))
-    print(f"CPU time: {(time.time()-start)*1e3:.2f} ms")
+    # ts_np = np.linspace(0, T, N)  # or ts.toarray().flatten()
+    # q_ref_np = q_ref_cas.toarray()       # shape (N,12)
+    # foot_ref_np = foot_ref_flat_cas.toarray().reshape((N,4,3))
 
     return ts_np, q_ref_np, foot_ref_np
-
 # ----------------------------------------------------------------------
 # “→ replaced with CasADi” generate_gait_libray (collect references, stack in NumPy)
 # ----------------------------------------------------------------------

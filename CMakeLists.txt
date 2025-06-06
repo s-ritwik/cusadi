@@ -21,10 +21,10 @@ set(CMAKE_CXX_STANDARD 11)
 # Set CUDA flags
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -O3 -arch=sm_86 --use_fast_math)  # Adjust architecture as needed
 
-set(ONE_STEP_REF_SOURCE codegen/one_step_ref.cu)
+set(REFERENCE_STEP_SOURCE codegen/reference_step.cu)
 
 # Include directories for your header files
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(one_step_ref SHARED ${ONE_STEP_REF_SOURCE})
-target_link_libraries(one_step_ref)
+add_library(reference_step SHARED ${REFERENCE_STEP_SOURCE})
+target_link_libraries(reference_step)
