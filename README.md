@@ -9,6 +9,7 @@
     <br />
   </h3>
 </div>
+
 ## Changes made until now
 
 - Wrote a CasADi wrapper to solve IK for GO2 using Pinocchio
