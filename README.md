@@ -9,10 +9,17 @@
     <br />
   </h3>
 </div>
-<p>Changes made until now</p>
+<h2>Changes made until now</h2>
 <ul>
   <li>Wrote a CasADi wrapper to solve IK for GO2 using Pinocchio</li>
   <li>Ran that on an RTX 3050, got a 3-4x speedup in solving the IK</li>
+</ul>
+
+<h2>Relevant Files and Locations</h2>
+<ul>
+  <li><code>/Go2_pinocchio/go2_casadi_gen.py</code> — CasADi wrapper generator for IK</li>
+  <li><code>/Go2_pinocchio/go2_casadi_main_cpu.py</code> — Main script to run IK solver on CPU</li>
+  <li><code>/Go2_pinocchio/go2_casadi_main_gpu.py</code> — Main script to run IK solver on GPU (RTX 3050 used for 3-4x speedup)</li>
 </ul>
 
 <p align="center">
