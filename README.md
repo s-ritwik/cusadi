@@ -17,9 +17,9 @@
 
 ## Relevant Files and Locations
 
-- `/Go2_pinocchio/go2_casadi_gen.py` — CasADi wrapper generator for IK
-- `/Go2_pinocchio/go2_casadi_main_gpu.py` — Main script to run IK solver on GPU (RTX 3050 used)
-- `/Go2_pinocchio/go2_casadi_main_cpu.py` — Main script to run IK solver on CPU
+- [go2_casadi_gen.py](./Go2_pinocchio/go2_casadi_gen.py) — CasADi wrapper generator for IK
+- [go2_casadi_main_cpu.py](./Go2_pinocchio/go2_casadi_main_cpu.py) — Main script to run IK solver on CPU
+- [go2_casadi_main_gpu.py](./Go2_pinocchio/go2_casadi_main_gpu.py) — Main script to run IK solver on GPU (RTX 3050 used)
 
 
 <p align="center">
