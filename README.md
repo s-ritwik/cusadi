@@ -9,7 +9,10 @@
     <br />
   </h3>
 </div>
-
+<p>Changes made untill now
+  <item>Wrote a casadi wrapper to solve IK for GO2 using Pinocchio</item>
+  <item> Ran that on a RTX 3050, got a 3-4x speedup in solving the IK</item>
+</p>
 <p align="center">
   <video src="https://github.com/user-attachments/assets/289946ea-c5c7-4929-a82e-8277af8a5b82" width=800 autoplay=true loop=true />
 </p>
