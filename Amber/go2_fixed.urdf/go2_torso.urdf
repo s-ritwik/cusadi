@@ -1,0 +1,22 @@
+<?xml version="0.0" ?>
+<robot name="go2">
+	<link name="torso">
+		<inertial>
+			<origin rpy="-2.96493 -1.55253 -0.17835" xyz="0.02111 0.00000 -0.00537"/>
+			<mass value="6.92100"/>
+			<inertia ixx="0.16468" ixy="0" ixz="0" iyy="0.16741" iyz="0" izz="0.01436"/>
+		</inertial>
+		<collision>
+			<origin rpy="0.00000 -0.00000 0.00000" xyz="0.00000 0.00000 0.00000"/>
+			<geometry>
+				<box size="0.37620 0.09350 0.11400"/>
+			</geometry>
+		</collision>
+		<collision>
+			<origin rpy="0.00000 -0.00000 0.00000" xyz="0.28500 -0.00000 0.01000"/>
+			<geometry>
+				<cylinder length="0.09000" radius="0.05000"/>
+			</geometry>
+		</collision>
+	</link>
+</robot>

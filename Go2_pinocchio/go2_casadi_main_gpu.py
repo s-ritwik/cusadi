@@ -1,13 +1,13 @@
 # import mujoco
 import numpy as np
-import pinocchio as pin
+import pinocchio as pin 
 import torch
 import time
 from scipy.linalg import pinv
 import casadi as ca
 print(ca.__version__)
-reference_step = ca.Function.load("/home/rycker/src/cusadi/reference_step.casadi")
-from src import CusadiFunction   # assumes you have the same “src/CusadiFunction” as in the pendulum example
+reference_step = ca.Function.load("/home/s-ritwik/src/cusadi/reference_step.casadi")
+from src import CusadiFunction   
 
 
 N = 100  # or whatever you used in generate_reference
@@ -156,7 +156,7 @@ def generate_reference(
 
 
     # 9) Loop over each time index i to fill q_ref_cas and foot_ref_flat_cas
-    # torch.cuda.synchronize()
+    torch.cuda.synchronize()
     t0 = time.time()                         # optional timing
 
     BATCH_SIZE = N
@@ -193,7 +193,7 @@ def generate_reference(
     q_batch_torch      = fn_cusadi_ref.outputs_sparse[0]        # (N,12)
     foot_batch_torch   = fn_cusadi_ref.outputs_sparse[1]        # (N,12)
 
-    # torch.cuda.synchronize()
+    torch.cuda.synchronize()
     print(f"GPU batch time: {(time.time()-t0)*1e3:.2f} ms")
 
     # --- copy back to CPU NumPy --------------------------------------------------

@@ -47,7 +47,7 @@ if __name__ == "__main__":
     foot_refs = np.load("references/go2_reference_foot_refs.npy") # (not used here, but loaded for completeness)
 
     # 2) Build Pinocchio model from URDF (free-flyer + 12 joints)
-    URDF_PATH = "Go2_pinocchio/go2_corrected_fixed3.urdf"
+    URDF_PATH = "/home/s-ritwik/src/cusadi/Go2_pinocchio/old/go2_corrected_fixed3.urdf"
     MESH_DIRS = ["Go2_pinocchio"]  # where your .stl/.obj meshes live
 
     try:

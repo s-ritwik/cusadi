@@ -4,7 +4,7 @@ import pinocchio as pin
 from scipy.linalg import pinv
 import casadi as ca
 print(ca.__version__)
-reference_step = ca.Function.load("/home/rycker/src/cusadi/reference_step.casadi")
+reference_step = ca.Function.load("/home/s-ritwik/src/cusadi/reference_step.casadi")
 import time
 # ----------------------------------------------------------------------
 # Pinocchio IK Model & constants (unchanged)

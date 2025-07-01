@@ -1,3 +1,3 @@
-/home/rycker/src/cusadi/build/CMakeFiles/reference_step.dir
-/home/rycker/src/cusadi/build/CMakeFiles/edit_cache.dir
-/home/rycker/src/cusadi/build/CMakeFiles/rebuild_cache.dir
+/home/s-ritwik/src/cusadi/build/CMakeFiles/reference_step.dir
+/home/s-ritwik/src/cusadi/build/CMakeFiles/edit_cache.dir
+/home/s-ritwik/src/cusadi/build/CMakeFiles/rebuild_cache.dir

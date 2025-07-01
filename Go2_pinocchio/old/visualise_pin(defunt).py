@@ -10,17 +10,12 @@ import os
 # Launch gepetto-gui in a new terminal
 def launch_gepetto_gui():
     try:
-        # Detect the shell and terminal
-        if sys.platform.startswith('linux'):
-            # Example with gnome-terminal
-            subprocess.Popen(["gnome-terminal", "--", "bash", "-c", "gepetto-gui & exec bash"])
-            # Alternative: use xterm if gnome-terminal is not installed
-            # subprocess.Popen(["xterm", "-e", "gepetto-gui &"])
-            print("[INFO] Launched gepetto-gui in a new terminal.")
-        else:
-            print("[WARN] Automatic gepetto-gui launch not implemented for this OS.")
+        subprocess.Popen(["gepetto-gui"])
+        print("[INFO] Started gepetto-gui.")
+    except FileNotFoundError:
+        print("[ERROR] gepetto-gui executable not found. Is it installed?")
     except Exception as e:
-        print(f"[ERROR] Failed to launch gepetto-gui: {e}")
+        print(f"[ERROR] Could not start gepetto-gui: {e}")
 
 # Call this function at start
 launch_gepetto_gui()
@@ -28,9 +23,9 @@ launch_gepetto_gui()
 # Optional: wait a few seconds to let gepetto-gui initialize
 time.sleep(2.0)
 
-v_x = 0.2
-v_y = 0.2
-w_z = 0.2
+v_x = 0.5
+v_y = 0.0
+w_z = 0.0
 
 def yaw2quat(theta):
     cy = np.cos(theta * 0.5)

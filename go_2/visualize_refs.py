@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 
-v_x = 0
+v_x = 0.5
 v_y = 0
 w_z = 0.25
 

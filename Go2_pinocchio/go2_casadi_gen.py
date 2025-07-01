@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import casadi as ca
+print(ca.__version__)
 import pinocchio as pin
+print(pin.__version__)
 from pinocchio import casadi as cpin
 import numpy as np
 import os

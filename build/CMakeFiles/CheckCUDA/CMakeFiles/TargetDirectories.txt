@@ -1,2 +1,2 @@
-/home/rycker/src/cusadi/build/CMakeFiles/CheckCUDA/CMakeFiles/edit_cache.dir
-/home/rycker/src/cusadi/build/CMakeFiles/CheckCUDA/CMakeFiles/rebuild_cache.dir
+/home/s-ritwik/src/cusadi/build/CMakeFiles/CheckCUDA/CMakeFiles/edit_cache.dir
+/home/s-ritwik/src/cusadi/build/CMakeFiles/CheckCUDA/CMakeFiles/rebuild_cache.dir

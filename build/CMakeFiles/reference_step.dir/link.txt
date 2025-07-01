@@ -1,1 +1,1 @@
-/usr/bin/g++ -fPIC -shared -Wl,-soname,libreference_step.so -o libreference_step.so @CMakeFiles/reference_step.dir/objects1.rsp @CMakeFiles/reference_step.dir/linkLibs.rsp -L"/usr/local/cuda-12.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.6/targets/x86_64-linux/lib"
+/usr/lib/nvidia-cuda-toolkit/bin/g++ -fPIC -shared -Wl,-soname,libreference_step.so -o libreference_step.so @CMakeFiles/reference_step.dir/objects1.rsp @CMakeFiles/reference_step.dir/linkLibs.rsp -L"/usr/lib/x86_64-linux-gnu/stubs" -L"/usr/lib/x86_64-linux-gnu"

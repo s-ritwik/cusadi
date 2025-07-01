@@ -1,1 +1,0 @@
-/usr/bin/g++ -fPIC -shared -Wl,-soname,libgenerate_reference.so -o libgenerate_reference.so @CMakeFiles/generate_reference.dir/objects1.rsp @CMakeFiles/generate_reference.dir/linkLibs.rsp -L"/usr/local/cuda-12.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.6/targets/x86_64-linux/lib"

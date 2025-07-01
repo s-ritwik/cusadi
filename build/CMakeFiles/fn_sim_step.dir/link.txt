@@ -1,1 +1,0 @@
-/usr/bin/g++ -fPIC -shared -Wl,-soname,libfn_sim_step.so -o libfn_sim_step.so @CMakeFiles/fn_sim_step.dir/objects1.rsp @CMakeFiles/fn_sim_step.dir/linkLibs.rsp -L"/usr/local/cuda-12.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.6/targets/x86_64-linux/lib"
