@@ -117,34 +117,41 @@ def generate_reference(
     foot_w_stack = ca.DM.zeros(6, N)
 
     for i in range(N):
-        φ = phase[i]            # global phase in [0,1]
+        φ = phase[i]  # global phase ∈ [0,1]
+        # two per-foot phases (left at φ, right at φ+0.5 mod 1)
+        phis = [φ, ca.fmod(φ + 0.5, 1)]
 
-        # per-foot phases: left=φ, right=φ+0.5 mod 1
-        φ0 = φ
-        φ1 = ca.fmod(φ + 0.5, 1)
+        # current COM world-pos
+        p_com = ca.vertcat(x_array[i], y_array[i], ca.DM(0))
+        # start/end world-foot positions (2×3)
+        p0 = ca.repmat(p_com.T, 2, 1) + default_foot_pos_mat
+        p_end_com = ca.vertcat(x_array[-1], y_array[-1], ca.DM(0))
+        p1 = ca.repmat(p_end_com.T, 2, 1) + default_foot_pos_mat
 
-        for k, φk in enumerate([φ0, φ1]):
-            # swing fraction s in [0,1] over half-cycle
-            s = ca.if_else(φk <= 0.5, 2*φk, 2*(1 - φk))
+        for k, φk in enumerate(phis):
+            # map φk → [0,1] over half cycle
+            tk = ca.if_else(φk <= 0.5, 2*φk, 2*(φk - 0.5))
 
-            # 1) x-trajectory: Bézier from p_foot_0[k,0] to p_foot_1[k,0]
-            x0 = p_foot_0[k, 0]
-            x1 = p_foot_1[k, 0]
-            xk = cubic_bezier_interpolation(x0, x1, s)
-
-            # 2) z-trajectory: same Bézier shape but between 0 and swing_height
-            zk = ca.if_else(
+            # X interp: swing phase → Bézier from p0→p1; stance → hold at p1
+            x0, y0, z0 = p0[k,0], p0[k,1], p0[k,2]
+            x1          = p1[k,0]
+            xk = ca.if_else(
                 φk <= 0.5,
-                cubic_bezier_interpolation(0, swing_height, 2*φk),
-                cubic_bezier_interpolation(swing_height, 0, 2*(φk - 0.5))
+                cubic_bezier_interpolation(x0, x1, tk),
+                x1
             )
 
-            # 3) constant lateral coordinate
-            yk = default_foot_pos_mat[k, 1]
+            # Z interp: swing phase → Bézier from z0→(z0+H); stance → hold at z0
+            H = swing_height
+            zk = ca.if_else(
+                φk <= 0.5,
+                cubic_bezier_interpolation(z0, z0 + H, tk),
+                z0
+            )
 
-            # pack into the 6-vector
+            # pack into the stack
             foot_w_stack[3*k + 0, i] = xk
-            foot_w_stack[3*k + 1, i] = yk
+            foot_w_stack[3*k + 1, i] = y0
             foot_w_stack[3*k + 2, i] = zk
 
 
