@@ -54,64 +54,45 @@ def generate_reference(vx,
 
     ts_np  = np.linspace(0, T, N)
     ts     = ca.DM(ts_np)
-    # base 0→1 phase over entire cycle
-    phase_base = ts_np / T                                      # shape (N,)
-    # two legs, half‐cycle offset for cyclic gait
-    offs = ca.DM([0.0, 0.5])                                     # shape (2,)
-    # expand to (2×N) and wrap
-    # turn phase_base into a 1×N row, then tile to 2×N:
-    phase_row = ca.DM(phase_base).T             # DM shape (1, N)
-    # now both terms are 2×N
-    sum_      = ca.repmat(offs,     1, N) \
-          + ca.repmat(phase_row, 2, 1)
-    phase_mat = ca.fmod(sum_, ca.DM(1.0))
-    # per-leg swing heights
-    mask_mat = phase_mat <= 0.5
-    z0_mat   = cubic_bezier(0, swing_h, 2*phase_mat)
-    z1_mat   = cubic_bezier(swing_h, 0, 2*phase_mat-1)
-    z_mat    = ca.if_else(mask_mat, z0_mat, z1_mat)             # shape (2×N)
+    phase  = ca.DM(np.clip(ts_np/T*2-0.5, 0, 1))     # 0→1 ramp
+    mask   = (phase.full().flatten() <= 0.5)
+
+    z0 = cubic_bezier(0, swing_h, 2*phase)
+    z1 = cubic_bezier(swing_h, 0, 2*phase-1)
+    z  = ca.if_else(ca.DM(mask), z0, z1)
 
     theta = ca.DM.zeros(ts.shape)
     x     = vx * ts
     y     = ca.DM.zeros(ts.shape)           # no lateral motion
     # default foot matrix  (2×3)
-    # foot_def = ca.horzcat(*[ca.DM(default_foot_pos[f]).reshape((3, 1))
-    #                         for f in foot_ids])
+    foot_def = ca.horzcat(*[ca.DM(default_foot_pos[f]).reshape((3, 1))
+                            for f in foot_ids])
     # Pre-compute start/end world foot targets
     p0_com = ca.vertcat(x[0],   y[0],   0)
     p1_com = ca.vertcat(x[-1],  y[-1],  0)
     R0, R1 = rot_z(theta[0]), rot_z(theta[-1])
-    # p0_ft  = ca.repmat(p0_com.T, N_LEGS, 1) + (R0 @ foot_def).T
-    # p1_ft  = ca.repmat(p1_com.T, N_LEGS, 1) + (R1 @ foot_def).T
-    p0_ft  = default_foot_pos + x[0]
-    p1_ft  = default_foot_pos + x[-1]
-    # Stack world-frame foot trajectories   (6×N)
-    foot_w_stack = ca.DM.zeros(2, N)
+    p0_ft  = ca.repmat(p0_com.T, N_LEGS, 1) + (R0 @ foot_def).T
+    p1_ft  = ca.repmat(p1_com.T, N_LEGS, 1) + (R1 @ foot_def).T
 
-    for k in range(2):
-        for i in range(N):
-            foot_w_stack[k, i] = cubic_bezier(
-                p0_ft[k], p1_ft[k], phase_mat[k, i]
-            )
+    # Stack world-frame foot trajectories   (6×N)
+    foot_w_stack = ca.DM.zeros(N_LEGS*3, N)
+    for i in range(N):
+        ft_i = cubic_bezier(p0_ft, p1_ft, phase[i])
+        foot_w_stack[:,i] = ca.reshape(ft_i, N_LEGS*3, 1)
 
     # Output arrays
     q_ref   = ca.DM.zeros(N, DOF)
     foot_b  = ca.DM.zeros(N, N_LEGS*3)
 
     for i in range(N):
-        # reference_step(phase, foot_x(2×1), z_swing, q_cur)
-        phase_i       = float(ts_np[i]/T)  # can pass anything ∈[0,1]
-        foot_x_vec    = foot_w_stack[:, i]
-        z_swing_scalar= float(z_mat[0, i]) # same swing height for both legs
-        qi, fbi        = reference_step(
-            phase_i,
-            foot_x_vec,
-            z_swing_scalar,
-            ca.DM.zeros(DOF, 1)   # initial guess
-        )
-        q_ref[i, :] = ca.reshape(qi, 1, DOF)
-        # f_ref[i, :] = ca.reshape(fbi, 1, DOF)
-    return ts_np, q_ref.toarray()
+        qi, fi = reference_step(phase[i],
+                                foot_w_stack[:,i],
+                                x[i], 0.0, 0.0, z[i],
+                                q_init_dm)
+        q_ref[i,:]  = ca.reshape(qi, 1, DOF)
+        foot_b[i,:] = ca.reshape(fi, 1, N_LEGS*3)
+    # print(q_ref.shape)
+    return ts_np, q_ref.toarray(), foot_b.toarray().reshape(N,N_LEGS,3)
 
 # ----------------------------------------------------------------------
 # 5) Library-builder  (unchanged logic, new dimensions)
@@ -122,21 +103,23 @@ def generate_gait_library(vxs,
     # default foot world positions from neutral pose
     pin.forwardKinematics(model_pin, data_pin, q_init)
     pin.updateFramePlacements(model_pin, data_pin)
-    # default_foot = {fid: data_pin.oMf[fid].translation.copy()
-    #                 for fid in frame_ids}
-    default_foot_x = np.array([data_pin.oMf[fid].translation[0]
-                           for fid in frame_ids])
+    default_foot = {fid: data_pin.oMf[fid].translation.copy()
+                    for fid in frame_ids}
+
     q_refs = np.zeros((len(vxs), N, DOF))
     foot_refs = np.zeros((len(vxs), N, N_LEGS, 3))
-    
+    ts_out = None
+    half= N//2
     for ix, vx in enumerate(vxs):
         print(f"Generate vx = {vx:.2f} m/s")
-        ts_out, q = generate_reference(
-            vx, frame_ids, default_foot_x,
+        ts_out, q, f = generate_reference(
+            vx, frame_ids, default_foot,
             swing_h, T, N)
         q_refs[ix,:,:]      = q
-        # foot_refs[ix,:,:,:] = f
-
+        foot_refs[ix,:,:,:] = f
+    q_refs[:, 2] = np.roll(q_refs[:, 2],  half, axis=0)
+    q_refs[:, 3] = np.roll(q_refs[:, 3],  half, axis=0)
+    foot_refs[ix, :, 1, :] = np.roll(foot_refs[ix, :, 1, :], half, axis=0)
     # Save to disk
     os.makedirs("Amber/references", exist_ok=True)
     np.save("Amber/references/amber_vxs.npy", vxs)
