@@ -17,7 +17,7 @@ def test_amber_ik_fk():
     
     # 3) Define a little test
     phase    = 0.15                          # some phase in [0,1)
-    foot_x   = np.array([ 0.20, -0.1 ])     # desired x positions of left & right toes
+    foot_x   = np.array([ 0.8, -0.2 ])     # desired x positions of left & right toes
     x_com    = 0.0
     z_com    = 0.33                          # nominal stand height
     z_swing  = 0.10                          # swing‐height

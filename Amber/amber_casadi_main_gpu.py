@@ -3,7 +3,9 @@ import numpy as np
 import pinocchio as pin
 import casadi as ca
 import time
-
+import torch
+from src import CusadiFunction   
+reference_step = ca.Function.load("/home/s-ritwik/src/cusadi/reference_step.casadi")
 print("CasADi version:", ca.__version__)
 
 # Load the pre-generated Amber IK solver
@@ -113,37 +115,43 @@ def generate_reference(
         ph_i         = phase[i]
         foot_world_i = cubic_bezier_interpolation(p_foot_0, p_foot_1, ph_i)  # (2×3)
         foot_w_stack[:, i] = ca.reshape(foot_world_i, 6, 1)                  # ◀ ADDED
+    # 7) ---- GPU‐batch IK for all N samples at once ----
 
-
+    torch.cuda.synchronize()
+    t0 = time.time()                         # optional timing
     q_prev = q_init_dm  # ◀ ADDED
+    BATCH_SIZE = N
+    # 7.1) Convert CasADi DMs to NumPy
+    phase_np = phase.toarray().squeeze()           # (N,)
+    x_np     = x_array.toarray().squeeze()         # (N,)
+    y_np     = y_array.toarray().squeeze()         # (N,)
+    z_np     = z_array.toarray().squeeze()         # (N,)
+    foot_np  = foot_w_stack.toarray().T.copy()     # (N,6)
 
-    # 7) Loop through each time‐step, call compiled IK
-    for i in range(N):
-        ph_i     = phase[i]
-        x_i_dm   = x_array[i]
-        y_i_dm   = y_array[i]                                               # ◀ ADDED
-        z_i_dm   = z_array[i]
-        foot_w_i = foot_w_stack[:, i]                                       # ◀ CHANGED
-        # print(foot_w_i)                                                      # ◀ CHANGED debug
-        q_guess = q_prev                            # ◀ ADDED
+    # 7.2) Stack initial q into shape (N,4)
+    q_init_np = np.tile(q_init.reshape(1,4), (N,1))  # (N,4)
 
-        q_i_cas, foot_flat_i = reference_step(
-            ph_i,           # phase
-            foot_w_i,       # full world‐frame foot positions ◀ CHANGED
-            x_i_dm,         # COM x
-            y_i_dm,         # COM y                      ◀ CHANGED
-            z_i_dm,         # swing z
-            q_guess       # q_guess
-        )
-        q_ref_cas[i, :]         = ca.reshape(q_i_cas, 1, 4)
-        foot_ref_flat_cas[i, :] = ca.reshape(foot_flat_i, 1, 6)
-        q_prev = q_i_cas
+    # 7.3) Move everything to CUDA tensors
+    phase_t   = torch.from_numpy(phase_np).to('cuda', torch.double).unsqueeze(1)  # (N,1)
+    x_t       = torch.from_numpy(x_np    ).to('cuda', torch.double).unsqueeze(1)
+    y_t       = torch.from_numpy(y_np    ).to('cuda', torch.double).unsqueeze(1)
+    z_t       = torch.from_numpy(z_np    ).to('cuda', torch.double).unsqueeze(1)
+    foot_t    = torch.from_numpy(foot_np ).to('cuda', torch.double)              # (N,6)
+    q_init_t  = torch.from_numpy(q_init_np).to('cuda', torch.double)             # (N,4)
 
-    # 8) Convert back to NumPy
-    q_ref_np    = q_ref_cas.toarray()                   # (N×4)
-    foot_ref_np = foot_ref_flat_cas.toarray().reshape(N, 2, 3)
-    print(f"  → single‐vx generation took {(time.time()-start)*1e3:.1f} ms")
+    # 7.4) Wrap and launch the CasADi kernel on GPU
+    fn = CusadiFunction(reference_step, N)
+    fn.evaluate([phase_t, foot_t, x_t, y_t, z_t, q_init_t])
 
+    # 7.5) Retrieve and reshape outputs
+    q_batch     = fn.outputs_sparse[0]                           # (N,4)
+    foot_batch  = fn.outputs_sparse[1]                           # (N,6)
+    torch.cuda.synchronize()
+    print("time:",(time.time()-t0)*1e3," ms")
+
+    q_ref_np         = q_batch.cpu().numpy()                     # (N,4)
+    foot_flat_np     = foot_batch.cpu().numpy()                  # (N,6)
+    foot_ref_np      = foot_flat_np.reshape(N, 2, 3)            # (N,2,3)
     return ts_np, q_ref_np, foot_ref_np
 
 # ----------------------------------------------------------------------
@@ -213,7 +221,10 @@ def generate_gait_library(
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
     # Define a grid of forward speeds
-    tstart= time.time()
+    torch.cuda.synchronize()
+    tstart=time.time()
     v_xs = np.linspace(-0.5,  0.5, 100)
     ts, q_refs, foot_refs = generate_gait_library(v_xs)
-    print(f"CPU total time: {(time.time()-tstart)*1e3:.2f} ms")
+    torch.cuda.synchronize()
+    print(f"GPU total time: {(time.time()-tstart)*1e3:.2f} ms")
+

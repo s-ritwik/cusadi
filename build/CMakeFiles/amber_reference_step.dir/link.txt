@@ -1,0 +1,1 @@
+/usr/lib/nvidia-cuda-toolkit/bin/g++ -fPIC -shared -Wl,-soname,libamber_reference_step.so -o libamber_reference_step.so @CMakeFiles/amber_reference_step.dir/objects1.rsp @CMakeFiles/amber_reference_step.dir/linkLibs.rsp -L"/usr/lib/x86_64-linux-gnu/stubs" -L"/usr/lib/x86_64-linux-gnu"

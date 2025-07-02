@@ -57,5 +57,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/reference_step.dir/DependInfo.cmake"
+  "CMakeFiles/amber_reference_step.dir/DependInfo.cmake"
   )

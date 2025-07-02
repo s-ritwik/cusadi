@@ -158,7 +158,7 @@ def generate_reference(
     # 2) Compute the “phase” for each t_i (NumPy→DM):
     phase_np = np.maximum(0.0, np.minimum(1.0, (ts_np/float(T) - 0.25)*2))  # (N,)
     phase    = ca.DM(phase_np)                    # DM (N,)
-
+    # print(phase)
     # 3) Compute “z_i” for each phase_i via Bézier.  We can do this in DM‐vector form:
 
     #    First split into two halves:
@@ -166,7 +166,7 @@ def generate_reference(
     # Build DM versions of z when phase≤0.5 and when phase>0.5:
     z0 = cubic_bezier_interpolation(ca.DM(0), ca.DM(swing_height), 2*phase)     # DM (N,)
     z1 = cubic_bezier_interpolation(ca.DM(swing_height), ca.DM(0), 2*phase - 1)  # DM (N,)
-
+    # print(z1)
     # 4) Heading θ(t) = w_z * t  (DM)
     theta_array = w_z * ts             # DM (N,)
     z_array = ca.DM.zeros(N, 1)
@@ -179,19 +179,19 @@ def generate_reference(
     else:
         x_array = (v_x * ca.sin(w_z*ts) + v_y*(ca.cos(w_z*ts) - 1)) / w_z
         y_array = (v_x*(1 - ca.cos(w_z*ts)) + v_y * ca.sin(w_z*ts)) / w_z
-
+    print(x_array)
     # 6) Build default foot positions (4×3) as a single CasADi DM
     default_foot_pos_mat = ca.DM.zeros(4, 3)
     for idx, fid in enumerate(foot_ids):
         default_foot_pos_mat[idx, :] = ca.DM(default_foot_pos_dict[fid].reshape((3,)))
-
+    # print(default_foot_pos_mat)
 
     # Pre‐compute R_start, R_end in CasADi
     theta_start = theta_array[0]     # DM scalar
     theta_end   = theta_array[-1]    # DM scalar
     R_start = rot_z_dm(theta_start)  # DM (3×3)
     R_end   = rot_z_dm(theta_end)    # DM (3×3)
-
+    # print(R_end)
 
     # Build p_com_0 and p_com_end (3×1 each) as CasADi DM
     # p_com_0   = ca.vertcat(ts[0]*0 + 0 + x_t[0]*0 + y_t[0]*0,  # trick: just build (x(0),y(0),0)
@@ -200,10 +200,10 @@ def generate_reference(
     # But better to write explicitly:
     p_com_0   = ca.vertcat(x_array[0], y_array[0], ca.DM(0))   # DM (3×1)
     p_com_end = ca.vertcat(x_array[-1], y_array[-1], ca.DM(0))# DM (3×1)
-
+    # print(p_com_end)
     p_foot_0 = ca.repmat(p_com_0.T, 4, 1) + ((R_start @ default_foot_pos_mat.T).T)  # DM (4×3)
     p_foot_1 = ca.repmat(p_com_end.T, 4, 1) + ((R_end   @ default_foot_pos_mat.T).T)  # DM (4×3)
-
+    # print(p_foot_1)
     # 8) Now precompute “foot_w_stack” as a DM of shape (12×N):
 
     #    For each i, foot_pos_world_i = Bézier(p_foot_0, p_foot_1, phase_i).
@@ -217,10 +217,11 @@ def generate_reference(
         foot_world_i = cubic_bezier_interpolation(p_foot_0, p_foot_1, ph_i)  # DM (4×3)
         # Flatten to 12×1 and store as column i:
         foot_w_stack[:, i] = ca.reshape(foot_world_i, 12, 1)
+        # if i==0 or i==N-1: 
+        #     print(ca.reshape(foot_world_i, 12, 1))
 
-    
 
-    
+
     # 9) Loop over each time index i to fill q_ref_cas and foot_ref_flat_cas
     for i in range(N):
         # Take precomputed scalars/vectors at index i:
@@ -230,7 +231,7 @@ def generate_reference(
         theta_i  = theta_array[i]    # DM scalar
         z_i_dm   = z_array[i]        # DM scalar
         foot_w_i = foot_w_stack[:, i]# DM (12,)
-
+        # print(z_i_dm)
         # Single call into the compiled function:
         q_i_cas, foot_flat_i = reference_step(
             ph_i,            # DM scalar
@@ -359,9 +360,11 @@ def generate_gait_libray(v_xs_np, v_ys_np, w_zs_np, swing_height=0.08, T=0.4, N=
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
     # Define velocity grids in NumPy
-    v_xs = np.linspace(-1.0, 1.5, 11)
-    v_ys = np.linspace(-0.75, 0.75, 7)
-    w_zs = np.linspace(-0.5, 0.5, 5)
-
+    v_xs = np.linspace(-1.0, 1.5, 1)
+    v_ys = np.linspace(-0.75, 0.75, 1)
+    w_zs = np.linspace(-0.5, 0.5, 1)
+    v_xs = np.linspace(0.5, 0.5, 1)
+    v_ys = np.linspace(0, 0, 1)
+    w_zs = np.linspace(0, 0, 1)
     ts, q_refs, foot_refs = generate_gait_libray(v_xs, v_ys, w_zs)
     print("All references generated and saved (using CasADi inside).")

@@ -117,41 +117,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named reference_step
+# Target rules for targets named amber_reference_step
 
 # Build rule for target.
-reference_step: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 reference_step
-.PHONY : reference_step
+amber_reference_step: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 amber_reference_step
+.PHONY : amber_reference_step
 
 # fast build rule for target.
-reference_step/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/build
-.PHONY : reference_step/fast
+amber_reference_step/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/amber_reference_step.dir/build.make CMakeFiles/amber_reference_step.dir/build
+.PHONY : amber_reference_step/fast
 
-codegen/reference_step.o: codegen/reference_step.cu.o
-.PHONY : codegen/reference_step.o
+codegen/amber_reference_step.o: codegen/amber_reference_step.cu.o
+.PHONY : codegen/amber_reference_step.o
 
 # target to build an object file
-codegen/reference_step.cu.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/codegen/reference_step.cu.o
-.PHONY : codegen/reference_step.cu.o
+codegen/amber_reference_step.cu.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/amber_reference_step.dir/build.make CMakeFiles/amber_reference_step.dir/codegen/amber_reference_step.cu.o
+.PHONY : codegen/amber_reference_step.cu.o
 
-codegen/reference_step.i: codegen/reference_step.cu.i
-.PHONY : codegen/reference_step.i
+codegen/amber_reference_step.i: codegen/amber_reference_step.cu.i
+.PHONY : codegen/amber_reference_step.i
 
 # target to preprocess a source file
-codegen/reference_step.cu.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/codegen/reference_step.cu.i
-.PHONY : codegen/reference_step.cu.i
+codegen/amber_reference_step.cu.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/amber_reference_step.dir/build.make CMakeFiles/amber_reference_step.dir/codegen/amber_reference_step.cu.i
+.PHONY : codegen/amber_reference_step.cu.i
 
-codegen/reference_step.s: codegen/reference_step.cu.s
-.PHONY : codegen/reference_step.s
+codegen/amber_reference_step.s: codegen/amber_reference_step.cu.s
+.PHONY : codegen/amber_reference_step.s
 
 # target to generate assembly for a file
-codegen/reference_step.cu.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/codegen/reference_step.cu.s
-.PHONY : codegen/reference_step.cu.s
+codegen/amber_reference_step.cu.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/amber_reference_step.dir/build.make CMakeFiles/amber_reference_step.dir/codegen/amber_reference_step.cu.s
+.PHONY : codegen/amber_reference_step.cu.s
 
 # Help Target
 help:
@@ -161,10 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... reference_step"
-	@echo "... codegen/reference_step.o"
-	@echo "... codegen/reference_step.i"
-	@echo "... codegen/reference_step.s"
+	@echo "... amber_reference_step"
+	@echo "... codegen/amber_reference_step.o"
+	@echo "... codegen/amber_reference_step.i"
+	@echo "... codegen/amber_reference_step.s"
 .PHONY : help
 
 

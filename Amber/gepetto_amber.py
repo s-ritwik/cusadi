@@ -28,7 +28,7 @@ if __name__ == "__main__":
         description="Visualize Amber biped gait library in Gepetto-GUI"
     )
     p.add_argument(
-        "--vx", type=float, default=None,
+        "--vx", type=float, default=0.2,
         help="Forward speed (m/s) to visualize (must match one of the precomputed vxs)"
     )
     p.add_argument(

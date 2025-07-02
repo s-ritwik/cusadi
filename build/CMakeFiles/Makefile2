@@ -63,7 +63,7 @@ CMAKE_BINARY_DIR = /home/s-ritwik/src/cusadi/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/reference_step.dir/all
+all: CMakeFiles/amber_reference_step.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -71,34 +71,34 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/reference_step.dir/clean
+clean: CMakeFiles/amber_reference_step.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/reference_step.dir
+# Target rules for target CMakeFiles/amber_reference_step.dir
 
 # All Build rule for target.
-CMakeFiles/reference_step.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/s-ritwik/src/cusadi/build/CMakeFiles --progress-num=1,2 "Built target reference_step"
-.PHONY : CMakeFiles/reference_step.dir/all
+CMakeFiles/amber_reference_step.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/amber_reference_step.dir/build.make CMakeFiles/amber_reference_step.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/amber_reference_step.dir/build.make CMakeFiles/amber_reference_step.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/s-ritwik/src/cusadi/build/CMakeFiles --progress-num=1,2 "Built target amber_reference_step"
+.PHONY : CMakeFiles/amber_reference_step.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/reference_step.dir/rule: cmake_check_build_system
+CMakeFiles/amber_reference_step.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/s-ritwik/src/cusadi/build/CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/reference_step.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/amber_reference_step.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/s-ritwik/src/cusadi/build/CMakeFiles 0
-.PHONY : CMakeFiles/reference_step.dir/rule
+.PHONY : CMakeFiles/amber_reference_step.dir/rule
 
 # Convenience name for target.
-reference_step: CMakeFiles/reference_step.dir/rule
-.PHONY : reference_step
+amber_reference_step: CMakeFiles/amber_reference_step.dir/rule
+.PHONY : amber_reference_step
 
 # clean rule for target.
-CMakeFiles/reference_step.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/reference_step.dir/build.make CMakeFiles/reference_step.dir/clean
-.PHONY : CMakeFiles/reference_step.dir/clean
+CMakeFiles/amber_reference_step.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/amber_reference_step.dir/build.make CMakeFiles/amber_reference_step.dir/clean
+.PHONY : CMakeFiles/amber_reference_step.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

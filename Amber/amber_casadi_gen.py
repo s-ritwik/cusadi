@@ -1,89 +1,96 @@
 #!/usr/bin/env python3
-"""
-Builds a CasADi-compiled IK step for the planar Amber,
-where each foot target is specified by an x-offset and a common swing height.
-"""
 import casadi as ca
 import pinocchio as pin
 from pinocchio import casadi as cpin
 import numpy as np
 import os
 
-# ——————————————————————————————
-# 1) User constants
-# ——————————————————————————————
-URDF        = "Amber/amber_free.urdf"
+# ---------------------------------------------------------------------
+# 1) User‐specified constants
+# ---------------------------------------------------------------------
+URDF      = "Amber/amber_free.urdf"
 FOOT_FRAMES = ["left_toe", "right_toe"]
-DAMPING     = 1e-4
-IK_ITERS    = 20
-IK_TOL      = 1e-6
-N_LEGS      = len(FOOT_FRAMES)    # 2
+DAMPING   = 1e-4
+IK_ITERS  = 20
+IK_TOL    = 1e-6
 
-# ——————————————————————————————
-# 2) Numeric Pinocchio model (to get frame IDs)
-# ——————————————————————————————
-model_num  = pin.buildModelFromUrdf(URDF)
-data_num   = model_num.createData()
-frame_ids  = [model_num.getFrameId(f) for f in FOOT_FRAMES]
-DOF        = model_num.nq        # 4 joint actuators
+# ---------------------------------------------------------------------
+# 2) Build numeric Pinocchio model (for frame IDs)
+# ---------------------------------------------------------------------
+model_num = pin.buildModelFromUrdf(URDF)
+data_num  = model_num.createData()
+frame_ids = [model_num.getFrameId(f) for f in FOOT_FRAMES]
 
-# ——————————————————————————————
-# 3) CasADi Pinocchio model
-# ——————————————————————————————
+# ---------------------------------------------------------------------
+# 3) Build CasADi‐compatible model + data
+# ---------------------------------------------------------------------
 cmodel = cpin.Model(model_num)
 cdata  = cmodel.createData()
 
-# ——————————————————————————————
-# 4) SX symbols
-# ——————————————————————————————
-phase    = ca.SX.sym("phase")                # unused but kept for parity
-foot_x   = ca.SX.sym("foot_x", N_LEGS)       # 2×1
-z_swing  = ca.SX.sym("z_swing")              # common swing height
-q_cur    = ca.SX.sym("q_cur", DOF)           # 4×1
+# ---------------------------------------------------------------------
+# 4) Declare SX symbols for inputs (now a full 6‐vector of foot world pos)
+# ---------------------------------------------------------------------
+phase   = ca.SX.sym("phase")           # (unused by IK, but part of signature)
+foot_w  = ca.SX.sym("foot_w", 6)       # [x1,y1,z1, x2,y2,z2]
+x_com   = ca.SX.sym("x_com")           # COM x in world
+y_com   = ca.SX.sym("y_com")           # COM y in world
+z_swing = ca.SX.sym("z_swing")         # swing‐height offset
+q_cur   = ca.SX.sym("q_cur", 4)        # initial guess for the 4 joint angles
 
-# ——————————————————————————————
-# 5) Build desired foot pos in body-frame
-# ——————————————————————————————
-# each foot: ( x_offset, 0, z_swing )
-foot_pos_body = ca.SX.zeros(N_LEGS, 3)
-for k in range(N_LEGS):
-    foot_pos_body[k,0] = foot_x[k]
-    foot_pos_body[k,1] = 0
-    foot_pos_body[k,2] = z_swing
+# ---------------------------------------------------------------------
+# 5) Reshape & build body‐frame targets
+# ---------------------------------------------------------------------
+# 5.1) reshape into a (2×3) SX matrix of world‐foot positions
+foot_pos_world = ca.reshape(foot_w, 2, 3)
 
-# flatten for output (6×1)
-foot_body_flat = ca.reshape(foot_pos_body, N_LEGS*3, 1)
+# 5.2) subtract COM and add vertical swing
+foot_body = ca.SX.zeros(2, 3)
+for i in range(2):
+    pw  = foot_pos_world[i, :].T                     # SX(3×1)
+    com = ca.vertcat(x_com, y_com, ca.SX(0))          # SX(3×1)
+    rel = pw - com                                   # SX(3×1)
+    pb  = rel + ca.vertcat(ca.SX(0), ca.SX(0), z_swing)  # SX(3×1)
+    foot_body[i, :] = pb.T                           # store as row
 
-# ——————————————————————————————
-# 6) Damped‐least‐squares IK loop
-# ——————————————————————————————
-q = q_cur
+# Flatten to a 6×1 vector (optional second output)
+foot_body_flat = ca.reshape(foot_body, 6, 1)
+
+# ---------------------------------------------------------------------
+# 6) IK: damped‐least‐squares per foot (identical to your version)
+# ---------------------------------------------------------------------
+q = q_cur  # SX(4×1)
 for k, fid in enumerate(frame_ids):
-    tgt = foot_pos_body[k,:].T
+    tgt_k = foot_body[k, :].T  # SX(3×1)
     for _ in range(IK_ITERS):
+        # forward kinematics
         cpin.forwardKinematics(cmodel, cdata, q)
         cpin.updateFramePlacements(cmodel, cdata)
-        err  = tgt - cdata.oMf[fid].translation
-        nerr = ca.norm_2(err)
-        J6   = cpin.computeFrameJacobian(
-                  cmodel, cdata, q, fid,
-                  pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)
-        Jpos = J6[:3, :]  
-        Jdls = Jpos.T @ ca.inv(Jpos @ Jpos.T + DAMPING*ca.SX.eye(3))
-        dq   = Jdls @ err
-        # if error small, stop; else step
-        q    = ca.if_else(nerr < IK_TOL, q, q + dq)
+        # position error
+        p_cur   = cdata.oMf[fid].translation   # SX(3×1)
+        err     = tgt_k - p_cur                # SX(3×1)
+        norm_e  = ca.norm_2(err)               # SX scalar
+        # Jacobian & DLS step
+        J6      = cpin.computeFrameJacobian(
+                     cmodel, cdata, q, fid,
+                     pin.ReferenceFrame.LOCAL_WORLD_ALIGNED
+                  )                            # SX(6×4)
+        Jpos    = J6[0:3, :]                   # SX(3×4)
+        λI      = DAMPING * ca.SX.eye(3)       # SX(3×3)
+        Jdls    = Jpos.T @ ca.inv(Jpos@Jpos.T + λI)  # SX(4×3)
+        dq      = Jdls @ err                   # SX(4×1)
+        # masked update (stop if below tol)
+        q       = ca.if_else(norm_e < IK_TOL, q, q + dq)
 
-q_ref = q
+q_ref = q  # final SX(4×1)
 
-# ——————————————————————————————
-# 7) Export the CasADi function
-# ——————————————————————————————
+# ---------------------------------------------------------------------
+# 7) Build & save the CasADi function “amber_reference_step”
+# ---------------------------------------------------------------------
 F = ca.Function(
-    "reference_step",
-    [ phase,   foot_x,   z_swing,   q_cur ],
-    [ q_ref,   foot_body_flat ]
+    "amber_reference_step",
+    [phase, foot_w, x_com, y_com, z_swing, q_cur],
+    [q_ref, foot_body_flat],
 )
 out_name = "amber_reference_step.casadi"
 F.save(out_name)
-print(f"[+] Wrote {out_name} ({os.path.getsize(out_name)/1e6:.2f} MB)")
+print(f"[+] Wrote “{out_name}” at {os.path.abspath(out_name)}")
