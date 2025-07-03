@@ -4,7 +4,7 @@ import pinocchio as pin
 from scipy.linalg import pinv
 import casadi as ca
 print(ca.__version__)
-reference_step = ca.Function.load("/home/s-ritwik/src/cusadi/reference_step.casadi")
+reference_step = ca.Function.load("reference_step.casadi")
 import time
 # ----------------------------------------------------------------------
 # Pinocchio IK Model & constants (unchanged)
@@ -179,7 +179,7 @@ def generate_reference(
     else:
         x_array = (v_x * ca.sin(w_z*ts) + v_y*(ca.cos(w_z*ts) - 1)) / w_z
         y_array = (v_x*(1 - ca.cos(w_z*ts)) + v_y * ca.sin(w_z*ts)) / w_z
-    print(x_array)
+    # print(x_array)
     # 6) Build default foot positions (4×3) as a single CasADi DM
     default_foot_pos_mat = ca.DM.zeros(4, 3)
     for idx, fid in enumerate(foot_ids):
@@ -203,7 +203,7 @@ def generate_reference(
     # print(p_com_end)
     p_foot_0 = ca.repmat(p_com_0.T, 4, 1) + ((R_start @ default_foot_pos_mat.T).T)  # DM (4×3)
     p_foot_1 = ca.repmat(p_com_end.T, 4, 1) + ((R_end   @ default_foot_pos_mat.T).T)  # DM (4×3)
-    # print(p_foot_1)
+    # print(p_foot_0,p_foot_1)
     # 8) Now precompute “foot_w_stack” as a DM of shape (12×N):
 
     #    For each i, foot_pos_world_i = Bézier(p_foot_0, p_foot_1, phase_i).
@@ -220,8 +220,8 @@ def generate_reference(
         # if i==0 or i==N-1: 
         #     print(ca.reshape(foot_world_i, 12, 1))
 
-
-
+    print(foot_w_stack[2,:])
+    print(foot_w_stack.shape)
     # 9) Loop over each time index i to fill q_ref_cas and foot_ref_flat_cas
     for i in range(N):
         # Take precomputed scalars/vectors at index i:

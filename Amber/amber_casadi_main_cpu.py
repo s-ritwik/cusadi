@@ -77,7 +77,7 @@ def generate_reference(
     phase_np = np.maximum(0.0, np.minimum(1.0, (ts_np/float(T) - 0.25)*2))
     phase    = ca.DM(phase_np)
     # print(phase)
-
+    
     # 3) Swing height profile via Bézier
     mask    = phase_np <= 0.5
     z0      = cubic_bezier_interpolation(ca.DM(0),           ca.DM(swing_height), 2*phase)
@@ -105,7 +105,7 @@ def generate_reference(
     p_com_end = ca.vertcat(x_array[-1], y_array[-1], ca.DM(0))               # ◀ CHANGED
     p_foot_0  = ca.repmat(p_com_0.T, 2, 1) + default_foot_pos_mat
     p_foot_1  = ca.repmat(p_com_end.T, 2, 1) + default_foot_pos_mat
-    # print(p_foot_1)
+    # print(p_foot_0,p_foot_1)
 
     # # 6) Pre-build world‐foot stack for IK                         ◀ CHANGED
     foot_w_stack = ca.DM.zeros(6, N)                                         # ◀ ADDED
@@ -114,7 +114,7 @@ def generate_reference(
         foot_world_i = cubic_bezier_interpolation(p_foot_0, p_foot_1, ph_i)  # (2×3)
         foot_w_stack[:, i] = ca.reshape(foot_world_i, 6, 1)                  # ◀ ADDED
 
-
+    print(foot_w_stack[1,:])
     q_prev = q_init_dm  # ◀ ADDED
 
     # 7) Loop through each time‐step, call compiled IK
@@ -214,6 +214,6 @@ def generate_gait_library(
 if __name__ == "__main__":
     # Define a grid of forward speeds
     tstart= time.time()
-    v_xs = np.linspace(-0.5,  0.5, 100)
+    v_xs = np.linspace(-0.5,  0.5, 1)
     ts, q_refs, foot_refs = generate_gait_library(v_xs)
     print(f"CPU total time: {(time.time()-tstart)*1e3:.2f} ms")

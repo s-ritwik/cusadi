@@ -103,6 +103,7 @@ if __name__ == "__main__":
     theta_array = np.zeros_like(ts)
     T        = ts.max()        # duration of one cycle
     x_offset = 0.0             # how far we’ve walked so far
+    phase_offset = np.array([0.0, T/2.0])
     # 7) Animation loop
     while True:
         try:
@@ -118,8 +119,16 @@ if __name__ == "__main__":
                 # actuated = q_refs[ix, i, :]            # shape (4,)
                 # print("actuated shape",actuated.shape[0])
                 # print(q_refs[ix,i,:])
-                q[actuated_idxs] = q_refs[ix, i, :]              # print(" actuated joints →", q[7:11])
+                # q[actuated_idxs] = q_refs[ix, i, :]              # print(" actuated joints →", q[7:11])
+                q_left = q_refs[ix, i, :2]
 
+                #  • right leg uses time shifted by half a cycle
+                t_phase = (ts[i] + phase_offset[1]) % T
+                # find the nearest index into ts
+                idx_phase = int(np.argmin(np.abs(ts - t_phase)))
+                q_right = q_refs[ix, idx_phase, 2:4]
+                q[actuated_idxs[0:2]] = q_left
+                q[actuated_idxs[2:4]] = q_right
                 # display
                 pin.forwardKinematics(model, data, q)
                 pin.updateFramePlacements(model, data)
