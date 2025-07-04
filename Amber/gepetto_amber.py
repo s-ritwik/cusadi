@@ -70,6 +70,7 @@ if __name__ == "__main__":
                 for jid in range(model.njoints) }
 
     actuated_names = ["q1_left","q2_left","q1_right","q2_right"]
+    
     actuated_idxs  = [ name_to_idx[n] for n in actuated_names ]
     print(actuated_idxs)
     print(" model.nq =", model.nq)

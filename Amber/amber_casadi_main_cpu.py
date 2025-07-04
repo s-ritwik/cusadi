@@ -114,7 +114,7 @@ def generate_reference(
         foot_world_i = cubic_bezier_interpolation(p_foot_0, p_foot_1, ph_i)  # (2×3)
         foot_w_stack[:, i] = ca.reshape(foot_world_i, 6, 1)                  # ◀ ADDED
 
-    print(foot_w_stack[1,:])
+    # print(foot_w_stack[1,:])
     q_prev = q_init_dm  # ◀ ADDED
 
     # 7) Loop through each time‐step, call compiled IK
@@ -151,9 +151,9 @@ def generate_reference(
 # ----------------------------------------------------------------------
 def generate_gait_library(
     v_xs_np: np.ndarray,
-    swing_height: float = 0.1,
+    swing_height: float = 0.15,
     T: float           = 0.4,
-    N: int             = 100
+    N: int             = 200
 ):
     """
     Loops over v_xs_np → calls generate_reference → stacks & time‐shifts.
@@ -214,6 +214,6 @@ def generate_gait_library(
 if __name__ == "__main__":
     # Define a grid of forward speeds
     tstart= time.time()
-    v_xs = np.linspace(-0.5,  0.5, 1)
+    v_xs = np.linspace(-1.5,  1.5, 100)
     ts, q_refs, foot_refs = generate_gait_library(v_xs)
     print(f"CPU total time: {(time.time()-tstart)*1e3:.2f} ms")
