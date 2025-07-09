@@ -160,7 +160,7 @@ def generate_reference(
 def generate_gait_library(
     v_xs_np: np.ndarray,
     swing_height: float = 0.1,
-    T: float           = 0.4,
+    T: float           = 0.2,
     N: int             = 100
 ):
     """
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     # Define a grid of forward speeds
     torch.cuda.synchronize()
     tstart=time.time()
-    v_xs = np.linspace(-0.5,  0.5, 100)
+    v_xs = np.linspace(-1.5,  1.5, 100)
     ts, q_refs, foot_refs = generate_gait_library(v_xs)
     torch.cuda.synchronize()
     print(f"GPU total time: {(time.time()-tstart)*1e3:.2f} ms")

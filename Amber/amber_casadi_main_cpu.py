@@ -27,8 +27,8 @@ data_pin  = model_pin.createData()
 # Assume fixed‐base; neutral() yields exactly your 4 actuated joints
 q_init = pin.neutral(model_pin)
 # print(q_init)
+# print(q_init)
 q_init_dm = ca.DM(q_init.reshape(-1, 1))  # (4×1) for Amber
-
 # Frame IDs for the two feet
 frame_ids = [model_pin.getFrameId(name) for name in FOOT_FRAMES]
 
@@ -113,8 +113,9 @@ def generate_reference(
         ph_i         = phase[i]
         foot_world_i = cubic_bezier_interpolation(p_foot_0, p_foot_1, ph_i)  # (2×3)
         foot_w_stack[:, i] = ca.reshape(foot_world_i, 6, 1)                  # ◀ ADDED
-
-    # print(foot_w_stack[1,:])
+    # test=ca.reshape(foot_w_stack[:,0], 2, 3)
+    # print(test)
+    # print(foot_w_stack[:,0])
     q_prev = q_init_dm  # ◀ ADDED
 
     # 7) Loop through each time‐step, call compiled IK
@@ -151,8 +152,8 @@ def generate_reference(
 # ----------------------------------------------------------------------
 def generate_gait_library(
     v_xs_np: np.ndarray,
-    swing_height: float = 0.15,
-    T: float           = 0.4,
+    swing_height: float = 0.07,
+    T: float           = 0.2,
     N: int             = 200
 ):
     """
@@ -214,6 +215,6 @@ def generate_gait_library(
 if __name__ == "__main__":
     # Define a grid of forward speeds
     tstart= time.time()
-    v_xs = np.linspace(-1.5,  1.5, 100)
+    v_xs = np.linspace(-1.5,  1.5, 1)
     ts, q_refs, foot_refs = generate_gait_library(v_xs)
     print(f"CPU total time: {(time.time()-tstart)*1e3:.2f} ms")

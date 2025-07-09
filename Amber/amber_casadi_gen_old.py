@@ -8,7 +8,7 @@ import os
 # ---------------------------------------------------------------------
 # 1) User‐specified constants
 # ---------------------------------------------------------------------
-URDF      = "/home/s-ritwik/src/cusadi/Amber/amber_free.urdf"
+URDF      = "Amber/amber_free.urdf"
 FOOT_FRAMES = ["left_toe", "right_toe"]
 DAMPING   = 1e-4
 IK_ITERS  = 20
@@ -30,13 +30,12 @@ cdata  = cmodel.createData()
 # ---------------------------------------------------------------------
 # 4) Declare SX symbols for inputs (now a full 6‐vector of foot world pos)
 # ---------------------------------------------------------------------
-phase   = ca.SX.sym("phase")
-foot_w  = ca.SX.sym("foot_w", 6)            # [Lx Rx Ly Ry Lz Rz]
-x_com   = ca.SX.sym("com_x")
-y_com   = ca.SX.sym("com_y")
-com_z   = ca.SX.sym("com_z")                # NEW
-q_cur   = ca.SX.sym("q_cur", 4)
-p_com = ca.vertcat(x_com, y_com, com_z)     # uses com_z now
+phase   = ca.SX.sym("phase")           # (unused by IK, but part of signature)
+foot_w  = ca.SX.sym("foot_w", 6)       # [x1,y1,z1, x2,y2,z2]
+x_com   = ca.SX.sym("x_com")           # COM x in world
+y_com   = ca.SX.sym("y_com")           # COM y in world
+z_swing = ca.SX.sym("z_swing")         # swing‐height offset
+q_cur   = ca.SX.sym("q_cur", 4)        # initial guess for the 4 joint angles
 
 # ---------------------------------------------------------------------
 # 5) Reshape & build body‐frame targets
@@ -47,12 +46,13 @@ foot_pos_world = ca.reshape(foot_w, 2, 3)
 # 5.2) subtract COM and add vertical swing
 foot_body = ca.SX.zeros(2, 3)
 for i in range(2):
-    pw  = foot_pos_world[i, :].T                 # SX(3×1)
-    com = ca.vertcat(x_com, y_com, com_z)        # SX(3×1)   ← NEW
-    pb  = pw - com                               # SX(3×1)
-    foot_body[i, :] = pb.T                       # store row
+    pw  = foot_pos_world[i, :].T                     # SX(3×1)
+    com = ca.vertcat(x_com, y_com, ca.SX(0))          # SX(3×1)
+    rel = pw - com                                   # SX(3×1)
+    pb  = rel + ca.vertcat(ca.SX(0), ca.SX(0), z_swing)  # SX(3×1)
+    foot_body[i, :] = pb.T                           # store as row
 
-# Flatten to a 6×1 vector (optional second output, unchanged)
+# Flatten to a 6×1 vector (optional second output)
 foot_body_flat = ca.reshape(foot_body, 6, 1)
 
 # ---------------------------------------------------------------------
@@ -88,7 +88,7 @@ q_ref = q  # final SX(4×1)
 # ---------------------------------------------------------------------
 F = ca.Function(
     "amber_reference_step",
-    [phase, foot_w, x_com, y_com, com_z, q_cur],
+    [phase, foot_w, x_com, y_com, z_swing, q_cur],
     [q_ref, foot_body_flat],
 )
 out_name = "amber_reference_step.casadi"
