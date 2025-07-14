@@ -115,10 +115,7 @@ def generate_reference(
         foot_w_stack[:, i] = ca.reshape(foot_world_i, 6, 1)                  # ◀ ADDED
     # test=ca.reshape(foot_w_stack[:,0], 2, 3)
     # print(test)
-    foot_w_stack[5,:]+=z_array.T
-    foot_w_stack[4,:]+=z_array.T
-
-    # print(foot_w_stack[:,100])
+    # print(foot_w_stack[:,0])
     q_prev = q_init_dm  # ◀ ADDED
 
     # 7) Loop through each time‐step, call compiled IK
@@ -126,7 +123,7 @@ def generate_reference(
         ph_i     = phase[i]
         x_i_dm   = x_array[i]
         y_i_dm   = y_array[i]                                               # ◀ ADDED
-        z_i_dm   = 0
+        z_i_dm   = z_array[i]
         foot_w_i = foot_w_stack[:, i]                                       # ◀ CHANGED
         # print(f"foot pos:{foot_w_i}; x:{x_i_dm}; y:{y_i_dm};")                                                      # ◀ CHANGED debug
         q_guess = q_prev                            # ◀ ADDED
@@ -157,7 +154,7 @@ def generate_reference(
 def generate_gait_library(
     v_xs_np: np.ndarray,
     swing_height: float = 0.07,
-    T: float           = 0.8,
+    T: float           = 0.2,
     N: int             = 200
 ):
     """
@@ -191,7 +188,6 @@ def generate_gait_library(
     # Stack into full arrays
     q_refs_np    = np.stack(q_refs_list,    axis=0)  # (vx_len, N, 4)
     foot_refs_np = np.stack(foot_refs_list, axis=0)  # (vx_len, N, 2, 3)
-    print(q_refs_np)
 
     # 75% time‐shift
     ind_75       = int(N*0.75)
@@ -220,6 +216,6 @@ def generate_gait_library(
 if __name__ == "__main__":
     # Define a grid of forward speeds
     tstart= time.time()
-    v_xs = np.linspace(-1.5,  1.5, 1)
+    v_xs = np.linspace(-1.5,  1.5, 100)
     ts, q_refs, foot_refs = generate_gait_library(v_xs)
     print(f"CPU total time: {(time.time()-tstart)*1e3:.2f} ms")

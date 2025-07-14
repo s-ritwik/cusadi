@@ -45,6 +45,7 @@ if __name__ == "__main__":
     ref_dir = Path("Amber/references")
     vxs = np.load(ref_dir / "amber_vxs.npy")
     ts  = np.load(ref_dir / "amber_reference_ts.npy")
+    # print(ts)
     q_refs = np.load(ref_dir / "amber_reference_qs.npy")         # shape (n_vx, N, 4)
     print("vxs",q_refs.shape)
 
@@ -98,7 +99,8 @@ if __name__ == "__main__":
 
     # 6) Prepare time & transforms
     N = ts.shape[0]
-    dt = 1.0/60.0
+    ts_val=ts[-1]
+    dt = ts_val/N
     x_array     = vx * ts
     y_array     = np.zeros_like(ts)
     theta_array = np.zeros_like(ts)

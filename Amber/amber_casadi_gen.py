@@ -36,6 +36,9 @@ x_com   = ca.SX.sym("com_x")
 y_com   = ca.SX.sym("com_y")
 com_z   = ca.SX.sym("com_z")                # NEW
 q_cur   = ca.SX.sym("q_cur", 4)
+
+
+
 p_com = ca.vertcat(x_com, y_com, com_z)     # uses com_z now
 
 # ---------------------------------------------------------------------

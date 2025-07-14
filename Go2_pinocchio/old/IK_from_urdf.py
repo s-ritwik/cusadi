@@ -28,7 +28,7 @@ data  = model.createData()
 # “Neutral” standing posture as a reasonable initial guess
 q_init = pin.neutral(model)
 q_init[:] = np.deg2rad(
-    [-5.7, 45.8, -86.,
+    [+5.7, 45.8, -86.,
      +5.7, 45.8, -86.,
      -5.7, 57.3, -86.,
      +5.7, 57.3, -86.]

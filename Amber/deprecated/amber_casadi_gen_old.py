@@ -31,7 +31,7 @@ cdata  = cmodel.createData()
 # 4) Declare SX symbols for inputs (now a full 6‐vector of foot world pos)
 # ---------------------------------------------------------------------
 phase   = ca.SX.sym("phase")           # (unused by IK, but part of signature)
-foot_w  = ca.SX.sym("foot_w", 6)       # [x1,y1,z1, x2,y2,z2]
+foot_w  = ca.SX.sym("foot_w", 6)       # [x1,x2,y1,y2,z1,z2]
 x_com   = ca.SX.sym("x_com")           # COM x in world
 y_com   = ca.SX.sym("y_com")           # COM y in world
 z_swing = ca.SX.sym("z_swing")         # swing‐height offset
