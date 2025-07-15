@@ -126,7 +126,7 @@ def generate_reference(
         ph_i     = phase[i]
         x_i_dm   = x_array[i]
         y_i_dm   = y_array[i]                                               # ◀ ADDED
-        z_i_dm   = 0
+        z_i_dm   = -.2
         foot_w_i = foot_w_stack[:, i]                                       # ◀ CHANGED
         # print(f"foot pos:{foot_w_i}; x:{x_i_dm}; y:{y_i_dm};")                                                      # ◀ CHANGED debug
         q_guess = q_prev                            # ◀ ADDED
@@ -141,6 +141,7 @@ def generate_reference(
         )
         # print(f"q_guess:{q_i_cas}")
         q_ref_cas[i, :]         = ca.reshape(q_i_cas, 1, 4)
+        # print(q_ref_cas)
         foot_ref_flat_cas[i, :] = ca.reshape(foot_flat_i, 1, 6)
         q_prev = q_i_cas
 
@@ -220,6 +221,6 @@ def generate_gait_library(
 if __name__ == "__main__":
     # Define a grid of forward speeds
     tstart= time.time()
-    v_xs = np.linspace(-1.5,  1.5, 1)
+    v_xs = np.linspace(-1.5,  1.5, 100)
     ts, q_refs, foot_refs = generate_gait_library(v_xs)
     print(f"CPU total time: {(time.time()-tstart)*1e3:.2f} ms")

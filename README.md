@@ -17,9 +17,12 @@
 
 ## Relevant Files and Locations
 
-- [go2_casadi_gen.py](./Go2_pinocchio/go2_casadi_gen.py) — CasADi wrapper generator for IK
+<!-- - [go2_casadi_gen.py](./Go2_pinocchio/go2_casadi_gen.py) — CasADi wrapper generator for IK
 - [go2_casadi_main_cpu.py](./Go2_pinocchio/go2_casadi_main_cpu.py) — Main script to run IK solver on CPU
-- [go2_casadi_main_gpu.py](./Go2_pinocchio/go2_casadi_main_gpu.py) — Main script to run IK solver on GPU (RTX 3050 used)
+- [go2_casadi_main_gpu.py](./Go2_pinocchio/go2_casadi_main_gpu.py) — Main script to run IK solver on GPU  -->
+- [amber_casadi_gen.py](./Amber/amber_casadi_gen.py) — This function generates an IK solver which takes foot positions(world) and com pos(world) and gives you joint angles. (tried and tested with CUDA parallisation)
+
+(RTX 3050 used)
 
 
 <p align="center">
