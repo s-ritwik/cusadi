@@ -23,7 +23,7 @@
 - [amber_casadi_gen.py](./Amber/amber_casadi_gen.py) — This function generates an IK solver which takes foot positions(world) and com pos(world) and gives you joint angles. (tried and tested with CUDA parallisation)
 - [amber_casadi_main_cpu.py](./Amber/amber_casadi_main_cpu.py) — This function calls the IK solver to generate a reference gait cycle for the feet to follow a particular velocity.
 - [amber_casadi_main_gpu.py](./Amber/amber_casadi_main_gpu.py) — This function calls the IK solver to generate a reference gait cycle for the feet to follow a particular velocity while utilising CusADi to solve it in parallel.
--- [gepetto_amber.py](./Amber/gepetto_amber.py) — This will visualise your generated references( quick sanity check to see how your IK solver is doing)
+- [gepetto_amber.py](./Amber/gepetto_amber.py) — This will visualise your generated references( quick sanity check to see how your IK solver is doing)
 ![Demo](Amber/amber_walking_plotting.gif)
 
 
