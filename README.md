@@ -12,8 +12,8 @@
 
 ## Changes made until now
 
-- Wrote a CasADi wrapper to solve IK for GO2 using Pinocchio
-- Ran that on an RTX 3050, got a 3-4x speedup in solving the IK
+- Wrote a CasADi wrapper to solve IK for GO2 and Amber (planar walker) using Pinocchio to build a model
+- Ran that on an RTX 4090, got a ~10x speedup in solving the IK
 
 ## Relevant Files and Locations
 
@@ -25,7 +25,6 @@
 - [amber_casadi_main_gpu.py](./Amber/amber_casadi_main_gpu.py) — This function calls the IK solver to generate a reference gait cycle for the feet to follow a particular velocity while utilising CusADi to solve it in parallel.
 -- [gepetto_amber.py](./Amber/gepetto_amber.py) — This will visualise your generated references( quick sanity check to see how your IK solver is doing)
 ![Demo](Amber/amber_walking_plotting.gif)
-(RTX 4090 used)
 
 
 <p align="center">
