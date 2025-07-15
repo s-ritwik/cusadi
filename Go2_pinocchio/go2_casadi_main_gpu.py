@@ -210,7 +210,7 @@ def generate_reference(
 # ----------------------------------------------------------------------
 # “→ replaced with CasADi” generate_gait_libray (collect references, stack in NumPy)
 # ----------------------------------------------------------------------
-def generate_gait_libray(v_xs_np, v_ys_np, w_zs_np, swing_height=0.08, T=0.4, N=100):
+def generate_gait_libray(v_xs_np, v_ys_np, w_zs_np, swing_height=0.08, T=1, N=100):
     """
     - Builds default foot positions (NumPy) via Pinocchio.
     - For each (v_x, v_y, w_z), calls generate_reference (CasADi inside).

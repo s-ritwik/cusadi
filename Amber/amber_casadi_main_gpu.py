@@ -28,6 +28,7 @@ data_pin  = model_pin.createData()
 
 # Assume fixed‐base; neutral() yields exactly your 4 actuated joints
 q_init = pin.neutral(model_pin)
+q_init[:]=[ 0.85542953, -1.3705312 ,  0.85542953 ,-1.3705312 ]
 # print(q_init)
 q_init_dm = ca.DM(q_init.reshape(-1, 1))  # (4×1) for Amber
 
@@ -116,10 +117,14 @@ def generate_reference(
         foot_world_i = cubic_bezier_interpolation(p_foot_0, p_foot_1, ph_i)  # (2×3)
         foot_w_stack[:, i] = ca.reshape(foot_world_i, 6, 1)                  # ◀ ADDED
     # 7) ---- GPU‐batch IK for all N samples at once ----
-
+    foot_w_stack[5,:]+=z_array.T
+    foot_w_stack[4,:]+=z_array.T
+    z_com=-.1
+    q_prev=[ 0.85542953, -1.3705312 ,  0.85542953 ,-1.3705312 ]
+    # q_init=[ 0.85542953, -1.3705312 ,  0.85542953 ,-1.3705312 ]
     torch.cuda.synchronize()
     t0 = time.time()                         # optional timing
-    q_prev = q_init_dm  # ◀ ADDED
+    # q_prev = q_init_dm  # ◀ ADDED
     BATCH_SIZE = N
     # 7.1) Convert CasADi DMs to NumPy
     phase_np = phase.toarray().squeeze()           # (N,)
@@ -135,9 +140,9 @@ def generate_reference(
     phase_t   = torch.from_numpy(phase_np).to('cuda', torch.double).unsqueeze(1)  # (N,1)
     x_t       = torch.from_numpy(x_np    ).to('cuda', torch.double).unsqueeze(1)
     y_t       = torch.from_numpy(y_np    ).to('cuda', torch.double).unsqueeze(1)
-    z_t       = torch.from_numpy(z_np    ).to('cuda', torch.double).unsqueeze(1)
     foot_t    = torch.from_numpy(foot_np ).to('cuda', torch.double)              # (N,6)
     q_init_t  = torch.from_numpy(q_init_np).to('cuda', torch.double)             # (N,4)
+    z_t = torch.full((N, 1), -0.1, dtype=torch.double, device='cuda')
 
     # 7.4) Wrap and launch the CasADi kernel on GPU
     fn = CusadiFunction(reference_step, N)
@@ -160,7 +165,7 @@ def generate_reference(
 def generate_gait_library(
     v_xs_np: np.ndarray,
     swing_height: float = 0.1,
-    T: float           = 0.2,
+    T: float           = 0.8,
     N: int             = 100
 ):
     """

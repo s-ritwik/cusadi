@@ -94,7 +94,7 @@ if __name__ == "__main__":
     foot_names = ["left_toe", "right_toe"]
     fids = [model.getFrameId(n) for n in foot_names]
     foot_zs = [data.oMf[fid].translation[2] for fid in fids]
-    z_base = -min(foot_zs)
+    z_base = -min(foot_zs)-0.1
     print(f"[INFO] Setting base height to {z_base:.3f} so feet start at z=0")
 
     # 6) Prepare time & transforms

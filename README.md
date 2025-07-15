@@ -21,8 +21,11 @@
 - [go2_casadi_main_cpu.py](./Go2_pinocchio/go2_casadi_main_cpu.py) — Main script to run IK solver on CPU
 - [go2_casadi_main_gpu.py](./Go2_pinocchio/go2_casadi_main_gpu.py) — Main script to run IK solver on GPU  -->
 - [amber_casadi_gen.py](./Amber/amber_casadi_gen.py) — This function generates an IK solver which takes foot positions(world) and com pos(world) and gives you joint angles. (tried and tested with CUDA parallisation)
-
-(RTX 3050 used)
+- [amber_casadi_main_cpu.py](./Amber/amber_casadi_main_cpu.py) — This function calls the IK solver to generate a reference gait cycle for the feet to follow a particular velocity.
+- [amber_casadi_main_gpu.py](./Amber/amber_casadi_main_gpu.py) — This function calls the IK solver to generate a reference gait cycle for the feet to follow a particular velocity while utilising CusADi to solve it in parallel.
+-- [gepetto_amber.py](./Amber/gepetto_amber.py) — This will visualise your generated references( quick sanity check to see how your IK solver is doing)
+![Demo](Amber/amber_walking_plotting.gif)
+(RTX 4090 used)
 
 
 <p align="center">
