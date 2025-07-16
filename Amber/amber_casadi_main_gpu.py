@@ -142,7 +142,7 @@ def generate_reference(
     y_t       = torch.from_numpy(y_np    ).to('cuda', torch.double).unsqueeze(1)
     foot_t    = torch.from_numpy(foot_np ).to('cuda', torch.double)              # (N,6)
     q_init_t  = torch.from_numpy(q_init_np).to('cuda', torch.double)             # (N,4)
-    z_t = torch.full((N, 1), -0.1, dtype=torch.double, device='cuda')
+    z_t = torch.full((N, 1), z_com, dtype=torch.double, device='cuda')
 
     # 7.4) Wrap and launch the CasADi kernel on GPU
     fn = CusadiFunction(reference_step, N)

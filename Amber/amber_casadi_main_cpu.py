@@ -38,7 +38,28 @@ pin.updateFramePlacements(model_pin, data_pin)
 default_foot_positions = {
     fid: data_pin.oMf[fid].translation.copy() for fid in frame_ids
 }
+# ----------------------------------------------------------------------
+# (DEBUG) Print neutral-pose CoM, foot poses, and every body origin
+# ----------------------------------------------------------------------
 
+
+# 1) Center of mass
+pin.centerOfMass(model_pin, data_pin, q_init)      # fills data_pin.com[0]
+com_world = data_pin.com[0].copy()
+print("\n[DEBUG] Neutral-pose Center-of-Mass (world):", com_world)
+
+# 2) Foot frame origins
+for name, fid in zip(FOOT_FRAMES, frame_ids):
+    p_w = data_pin.oMf[fid].translation
+    print(f"[DEBUG] {name:>10} origin (world):", p_w)
+
+# 3) All BODY frames (URDF links)
+print("\n[DEBUG] World-frame origins of every BODY frame:")
+for fid, frame in enumerate(model_pin.frames):
+    if frame.type == pin.FrameType.BODY:
+        p_w = data_pin.oMf[fid].translation
+        print(f"  {frame.name:>25}: {p_w}")
+print()  # neat newline before the rest of the script resumes
 # ----------------------------------------------------------------------
 # 3) Bézier swing helper (identical to Go2 version)
 # ----------------------------------------------------------------------
@@ -126,7 +147,7 @@ def generate_reference(
         ph_i     = phase[i]
         x_i_dm   = x_array[i]
         y_i_dm   = y_array[i]                                               # ◀ ADDED
-        z_i_dm   = -.2
+        z_i_dm   = -0
         foot_w_i = foot_w_stack[:, i]                                       # ◀ CHANGED
         # print(f"foot pos:{foot_w_i}; x:{x_i_dm}; y:{y_i_dm};")                                                      # ◀ CHANGED debug
         q_guess = q_prev                            # ◀ ADDED
@@ -192,8 +213,8 @@ def generate_gait_library(
     # Stack into full arrays
     q_refs_np    = np.stack(q_refs_list,    axis=0)  # (vx_len, N, 4)
     foot_refs_np = np.stack(foot_refs_list, axis=0)  # (vx_len, N, 2, 3)
-    print(q_refs_np)
-
+    # print(q_refs_np)
+    print(foot_ref_np[0])
     # 75% time‐shift
     ind_75       = int(N*0.75)
     q_refs_rot   = np.concatenate([q_refs_np[:, -ind_75:, :],
@@ -221,6 +242,6 @@ def generate_gait_library(
 if __name__ == "__main__":
     # Define a grid of forward speeds
     tstart= time.time()
-    v_xs = np.linspace(-1.5,  1.5, 100)
+    v_xs = np.linspace(-1.5,  1.5, 1)
     ts, q_refs, foot_refs = generate_gait_library(v_xs)
     print(f"CPU total time: {(time.time()-tstart)*1e3:.2f} ms")
